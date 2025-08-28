@@ -17,9 +17,16 @@ const popins500 = Poppins({
     weight: "500"
 })
 
-const popinsFont: { '400': NextFontWithVariable, '500': NextFontWithVariable } = {
+const popins600 = Poppins({
+    variable: "--font-popins-600",
+    subsets: ['latin'],
+    weight: "600"
+})
+
+const popinsFont: { '400': NextFontWithVariable, '500': NextFontWithVariable, '600': NextFontWithVariable } = {
     '400': popins400,
-    '500': popins500
+    '500': popins500,
+    '600': popins600
 }
 
 export {
