@@ -83,11 +83,11 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
       )}
 
       {/* Enhanced Sidebar */}
-      <div className={`
-        h-full w-80 bg-white/95 backdrop-blur-xl shadow-2xl transform transition-all duration-500 ease-in-out z-50 border-r border-gray-100
+      <div 
+        className={`h-full min-w-80 bg-white/95 backdrop-blur-xl shadow-2xl transform transition-all duration-500 ease-in-out z-50 border-r border-gray-100
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:w-80 lg:shadow-xl
-      `}>
+        lg:translate-x-0 lg:static lg:w-80 lg:shadow-xl`}
+      >
         {/* Sidebar Header with Brand */}
         <div className="relative h-[80px] bg-gradient-to-r from-[var(--primary)] via-amber-500 to-orange-500 flex items-center px-8 overflow-hidden">
           {/* Background Pattern */}
@@ -122,11 +122,11 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
         {/* Navigation */}
         <nav className="flex-1 px-6 py-8">
           <div className="space-y-3">
-            {navigation.map((item) => {
-              const active = isActive(item.href)
+            {navigation.map((item, index) => {
+              const active = index === 0 ? item.href === pathname : isActive(item.href)
               return (
                 <Link
-                  key={item.name}
+                  key={index}
                   href={item.href}
                   className={`
                     group relative flex items-center space-x-4 px-4 py-4 rounded-2xl transition-all duration-300 hover:scale-105
@@ -187,7 +187,7 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
       </div>
 
       {/* Main content wrapper */}
-      <div className="flex flex-col h-screen overflow-auto">
+      <div className="flex flex-col h-screen overflow-auto w-full">
         {/* Enhanced Header */}
         <header className={`
           sticky top-0 z-30 transition-all duration-300
