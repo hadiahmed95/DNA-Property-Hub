@@ -1,7 +1,6 @@
 import React from 'react'
 
-interface LinkedinProps extends React.SVGProps<SVGSVGElement> {
-}
+interface LinkedinProps extends React.SVGProps<SVGSVGElement> {}
 
 const Linkedin = (props: LinkedinProps) => {
   return (

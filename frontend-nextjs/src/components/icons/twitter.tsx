@@ -1,7 +1,6 @@
 import React from 'react'
 
-interface TwitterProps extends React.SVGProps<SVGSVGElement> {
-}
+interface TwitterProps extends React.SVGProps<SVGSVGElement> {}
 
 const Twitter = (props: TwitterProps) => {
   return (

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { MontserratFont } from "./fonts";
+import { MontserratFont } from "../fonts";
 import Button from "@/components/button";
 import Section from "@/components/section";
 
