@@ -13,7 +13,8 @@ import {
   BellIcon,
   MenuIcon,
   CloseIcon,
-  PlusIcon
+  PlusIcon,
+  UserAdminIcon
 } from '@/components/icons'
 import { MontserratFont, popinsFont } from '../fonts'
 import Input from '@/components/form/input'
@@ -26,29 +27,37 @@ interface PanelLayoutProps {
 const PanelLayout = ({ children }: PanelLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
   const pathname = usePathname()
-
-  // Handle scroll effect for header
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   const navigation = [
     { 
       name: 'Dashboard', 
       href: '/dashboard', 
       icon: HomeIcon,
-      description: 'Overview & Analytics'
+      description: 'Overview & Analytics',
+      subItems: []
     },
     { 
-      name: 'Properties', 
+      name: 'Properties',
       href: '/dashboard/properties', 
       icon: PropertiesIcon,
-      description: 'Manage Listings'
+      description: 'Manage Listings',
+      subItems: [
+        { name: 'All Properties', href: '/dashboard/properties' },
+        { name: 'Add Property', href: '/dashboard/properties/add' }
+      ]
+    },
+    { 
+      name: 'Users',
+      href: '/dashboard/users', 
+      icon: UserAdminIcon,
+      description: 'User Management',
+      subItems: [
+        { name: 'All Users', href: '/dashboard/users' },
+        { name: 'Add User', href: '/dashboard/users/add' },
+        { name: 'Roles & Permissions', href: '/dashboard/users/role-management' }
+      ]
     },
     { 
       name: 'Clients', 
@@ -72,6 +81,35 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
+  const isParentActive = (item: any) => {
+    return item.subItems?.some((subItem: any) => isActive(subItem.href)) || isActive(item.href)
+  }
+
+  const toggleExpanded = (itemName: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemName) 
+        ? prev.filter(name => name !== itemName)
+        : [...prev, itemName]
+    )
+  }
+
+  React.useEffect(() => {
+    navigation.forEach(item => {
+      if (item.subItems && item.subItems.length > 0 && isParentActive(item) && !expandedItems.includes(item.name)) {
+        setExpandedItems(prev => [...prev, item.name])
+      }
+    })
+  }, [pathname])
+
+  // Handle scroll effect for header
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   return (
     <div className="h-screen flex bg-gradient-to-br from-gray-50 via-white to-amber-50/20">
       {/* Mobile sidebar overlay */}
@@ -82,10 +120,9 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
         />
       )}
 
-      {/* Enhanced Sidebar */}
+      {/* Sidebar */}
       <div 
-        className={`h-full min-w-80 bg-white/95 backdrop-blur-xl shadow-2xl transform transition-all duration-500 ease-in-out z-50 border-r border-gray-100
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        className={`h-screen min-w-80 bg-white/95 backdrop-blur-xl shadow-2xl transform transition-all duration-500 ease-in-out z-50 border-r border-gray-100 overflow-auto ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:w-80 lg:shadow-xl`}
       >
         {/* Sidebar Header with Brand */}
@@ -123,43 +160,99 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
         <nav className="flex-1 px-6 py-8">
           <div className="space-y-3">
             {navigation.map((item, index) => {
-              const active = index === 0 ? item.href === pathname : isActive(item.href)
+              const parentActive = index === 0 ? item.href === pathname : isParentActive(item)
+              const expanded = expandedItems.includes(item.name)
+              const hasSubItems = !!item.subItems && item.subItems.length > 0
+              
               return (
-                <Link
-                  key={index}
-                  href={item.href}
-                  className={`
-                    group relative flex items-center space-x-4 px-4 py-4 rounded-2xl transition-all duration-300 hover:scale-105
-                    ${active 
-                      ? 'bg-gradient-to-r from-[var(--primary)] to-amber-500 text-white shadow-lg shadow-[var(--primary)]/25' 
-                      : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-amber-50 hover:text-gray-900'
-                    }
-                  `}
-                >
-                  {/* Active indicator */}
-                  {active && (
-                    <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-r-full"></div>
+                <div key={index}>
+                  {/* Main Navigation Item */}
+                  <div
+                    className={`group relative flex items-center justify-between px-4 py-4 rounded-2xl transition-all duration-300 cursor-pointer
+                      ${parentActive 
+                        ? 'bg-gradient-to-r from-[var(--primary)] to-amber-500 text-white shadow-lg shadow-[var(--primary)]/25' 
+                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-amber-50 hover:text-gray-900'
+                      }
+                    `}
+                    onClick={() => {
+                      if (hasSubItems) {
+                        toggleExpanded(item.name)
+                      } else {
+                        // Navigate to the main item if no sub-items
+                        window.location.href = item.href
+                      }
+                    }}
+                  >
+                    {/* Active indicator */}
+                    {parentActive && (
+                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-r-full"></div>
+                    )}
+                    
+                    <div className="flex items-center space-x-4 flex-1">
+                      <div className={`
+                        w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300
+                        ${parentActive 
+                          ? 'bg-white/20 backdrop-blur-sm' 
+                          : 'bg-gray-100 group-hover:bg-[var(--primary)]/10'
+                        }
+                      `}>
+                        <item.icon className={`w-5 h-5 ${parentActive ? 'text-white' : 'text-gray-600 group-hover:text-[var(--primary)]'}`} />
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className={`font-semibold transition-colors duration-200 ${popinsFont['600'].className}`}>
+                          {item.name}
+                        </div>
+                        <div className={`text-xs opacity-70 ${popinsFont['400'].className}`}>
+                          {item.description}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expand/Collapse Icon */}
+                    {hasSubItems && (
+                      <div className={`w-6 h-6 flex items-center justify-center transition-transform duration-300
+                        ${expanded ? 'rotate-180' : ''}`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sub Navigation Items */}
+                  {hasSubItems && (
+                    <div className={`
+                      overflow-hidden transition-all duration-300 ease-in-out
+                      ${expanded ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0'}
+                    `}>
+                      <div className="ml-6 space-y-1">
+                        {item.subItems.map((subItem: any) => {
+                          const subActive = isActive(subItem.href)
+                          return (
+                            <Link
+                              key={subItem.name}
+                              href={subItem.href}
+                              className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm
+                                ${subActive
+                                  ? 'bg-[var(--primary)]/10 text-[var(--primary)] border-l-2 border-[var(--primary)]'
+                                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                }
+                              `}
+                            >
+                              <div className={`w-2 h-2 rounded-full transition-all duration-200
+                                ${subActive ? 'bg-[var(--primary)]' : 'bg-gray-300'}
+                              `}></div>
+                              <span className={`${popinsFont['500'].className}`}>
+                                {subItem.name}
+                              </span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
                   )}
-                  
-                  <div className={`
-                    w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300
-                    ${active 
-                      ? 'bg-white/20 backdrop-blur-sm' 
-                      : 'bg-gray-100 group-hover:bg-[var(--primary)]/10'
-                    }
-                  `}>
-                    <item.icon className={`w-5 h-5 ${active ? 'text-white' : 'text-gray-600 group-hover:text-[var(--primary)]'}`} />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className={`font-semibold transition-colors duration-200 ${popinsFont['600'].className}`}>
-                      {item.name}
-                    </div>
-                    <div className={`text-xs opacity-70 ${popinsFont['400'].className}`}>
-                      {item.description}
-                    </div>
-                  </div>
-                </Link>
+                </div>
               )
             })}
           </div>
@@ -188,7 +281,7 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
 
       {/* Main content wrapper */}
       <div className="flex flex-col h-screen overflow-auto w-full">
-        {/* Enhanced Header */}
+        {/* Header */}
         <header className={`
           sticky top-0 z-30 transition-all duration-300
           ${scrolled 
@@ -206,7 +299,7 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
                   <MenuIcon className="w-5 h-5 text-gray-600 group-hover:text-[var(--primary)]" />
                 </button>
                 
-                {/* Enhanced Search Bar */}
+                {/* Search Bar */}
                 <div className="hidden sm:block relative">
                   <div className="relative">
                     <Input
@@ -232,7 +325,7 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
                   </div>
                 </button>
 
-                {/* Enhanced Add Property Button */}
+                {/* Add Property Button */}
                 <Button 
                   variant="primary"
                   icon={<PlusIcon className="w-5 h-5" />}

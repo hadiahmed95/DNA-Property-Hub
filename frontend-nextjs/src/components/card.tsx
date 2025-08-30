@@ -61,7 +61,7 @@ const Card = ({
       case 'glass':
         return 'hover:bg-white/90 hover:shadow-xl hover:-translate-y-1'
       case 'elevated':
-        return 'hover:-translate-y-2 hover:scale-[1.01]'
+        return 'translate-y-0 hover:-translate-y-2'
       default:
         return 'hover:shadow-xl hover:border-[var(--primary)]/20 hover:-translate-y-1'
     }
@@ -76,13 +76,13 @@ const Card = ({
         ${getHoverEffects()}
         rounded-2xl lg:rounded-3xl
         transition-all duration-500 ease-out
-        group
+        group overflow-hidden
         ${className}
       `}
       {...props}
     >
       {variant === 'gradient' && (
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl lg:rounded-3xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl lg:rounded-3xl z-[-1]"></div>
       )}
       <div className="relative z-10">
         {children}

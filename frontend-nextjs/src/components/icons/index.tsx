@@ -17,6 +17,7 @@ import TrashIcon from "./trash";
 import UsersIcon from "./users";
 import CloseIcon from "./close";
 import PropertiesIcon from "./properties";
+import UserAdminIcon from "./user-admin";
 
 export {
     Facebook,
@@ -37,5 +38,6 @@ export {
     TrashIcon,
     UsersIcon,
     CloseIcon,
-    PropertiesIcon
+    PropertiesIcon,
+    UserAdminIcon
 }

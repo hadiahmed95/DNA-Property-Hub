@@ -383,14 +383,14 @@ const PropertiesPage = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <Button 
               variant="dark" 
-              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/20 border"
+              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/20 border min-w-max"
               onClick={() => setShowFilters(!showFilters)}
             >
               {showFilters ? 'Hide Filters' : 'Show Filters'}
             </Button>
             <Button 
               variant="secondary" 
-              className="bg-white hover:bg-gray-50 text-[var(--primary)] border-0"
+              className="bg-white hover:bg-gray-50 text-[var(--primary)] border-0 min-w-max"
               icon={<PlusIcon className="w-4 h-4" />}
             >
               Add Property
