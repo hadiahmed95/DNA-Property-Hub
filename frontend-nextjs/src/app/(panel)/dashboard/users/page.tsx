@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import UsersService from '@/services/users.service'
+import RolesService from '@/services/roles.service'
 import Card from '@/components/card'
 import Button from '@/components/button'
 import Input from '@/components/form/input'
@@ -17,9 +19,11 @@ import {
   AnalyticsIcon
 } from '@/components/icons'
 import { MontserratFont, popinsFont } from '../../../fonts'
+import toast from 'react-hot-toast'
+import { Role } from '@/types/role'
 
 // User Types and Interfaces
-export type UserRole = 'super_admin' | 'admin' | 'agent' | 'manager' | 'client' | 'viewer'
+export type UserRole = { name: string, color: string}
 
 export interface User {
   id: number
@@ -53,8 +57,23 @@ export interface RolePermissions {
   }
 }
 
+const statusOptions = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+]
+
+const sortOptions = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'name', label: 'Name' },
+  { value: 'role', label: 'Role' },
+  { value: 'sales', label: 'Sales' }
+]
+
 const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([])
+  const [roles, setRoles] = useState<Role[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -72,203 +91,42 @@ const UsersPage = () => {
     sortBy: 'newest'
   })
 
-  // Role Definitions
-  const roleDefinitions: RolePermissions[] = [
-    {
-      role: 'super_admin',
-      name: 'Super Admin',
-      description: 'Full system access and control',
-      color: 'bg-purple-500',
-      permissions: {
-        properties: ['create', 'read', 'update', 'delete'],
-        users: ['create', 'read', 'update', 'delete'],
-        analytics: ['read', 'export'],
-        settings: ['read', 'update'],
-        clients: ['create', 'read', 'update', 'delete']
-      }
-    },
-    {
-      role: 'admin',
-      name: 'Admin',
-      description: 'Administrative access with user management',
-      color: 'bg-red-500',
-      permissions: {
-        properties: ['create', 'read', 'update', 'delete'],
-        users: ['create', 'read', 'update'],
-        analytics: ['read', 'export'],
-        settings: ['read'],
-        clients: ['create', 'read', 'update', 'delete']
-      }
-    },
-    {
-      role: 'manager',
-      name: 'Manager',
-      description: 'Team management and property oversight',
-      color: 'bg-blue-500',
-      permissions: {
-        properties: ['create', 'read', 'update'],
-        users: ['read', 'update'],
-        analytics: ['read'],
-        settings: ['read'],
-        clients: ['create', 'read', 'update']
-      }
-    },
-    {
-      role: 'agent',
-      name: 'Agent',
-      description: 'Property and client management',
-      color: 'bg-green-500',
-      permissions: {
-        properties: ['create', 'read', 'update'],
-        users: ['read'],
-        analytics: ['read'],
-        settings: ['read'],
-        clients: ['create', 'read', 'update']
-      }
-    },
-    {
-      role: 'client',
-      name: 'Client',
-      description: 'Property viewing and inquiry access',
-      color: 'bg-amber-500',
-      permissions: {
-        properties: ['read'],
-        users: [],
-        analytics: [],
-        settings: ['read'],
-        clients: ['read', 'update']
-      }
-    },
-    {
-      role: 'viewer',
-      name: 'Viewer',
-      description: 'Read-only access to properties',
-      color: 'bg-gray-500',
-      permissions: {
-        properties: ['read'],
-        users: [],
-        analytics: [],
-        settings: [],
-        clients: []
-      }
-    }
-  ]
-
-  // Sample Users Data
-  const sampleUsers: User[] = [
-    {
-      id: 1,
-      name: 'John Smith',
-      email: 'john.smith@company.com',
-      role: 'super_admin',
-      status: 'active',
-      avatar: 'JS',
-      phone: '+1 (555) 123-4567',
-      joinedDate: '2023-01-15',
-      lastLogin: '2024-01-30T10:30:00',
-      propertiesManaged: 45,
-      totalSales: '$2,450,000',
-      department: 'Administration',
-      location: 'New York',
-      permissions: [],
-      isVerified: true
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@company.com',
-      role: 'admin',
-      status: 'active',
-      avatar: 'SJ',
-      phone: '+1 (555) 234-5678',
-      joinedDate: '2023-02-20',
-      lastLogin: '2024-01-30T09:15:00',
-      propertiesManaged: 32,
-      totalSales: '$1,890,000',
-      department: 'Sales',
-      location: 'Los Angeles',
-      permissions: [],
-      isVerified: true
-    },
-    {
-      id: 3,
-      name: 'Mike Davis',
-      email: 'mike.davis@company.com',
-      role: 'agent',
-      status: 'active',
-      avatar: 'MD',
-      phone: '+1 (555) 345-6789',
-      joinedDate: '2023-03-10',
-      lastLogin: '2024-01-29T16:45:00',
-      propertiesManaged: 28,
-      totalSales: '$1,420,000',
-      department: 'Sales',
-      location: 'Miami',
-      permissions: [],
-      isVerified: true
-    },
-    {
-      id: 4,
-      name: 'Emily Wilson',
-      email: 'emily.wilson@company.com',
-      role: 'agent',
-      status: 'active',
-      avatar: 'EW',
-      phone: '+1 (555) 456-7890',
-      joinedDate: '2023-04-05',
-      lastLogin: '2024-01-30T08:20:00',
-      propertiesManaged: 22,
-      totalSales: '$980,000',
-      department: 'Sales',
-      location: 'Chicago',
-      permissions: [],
-      isVerified: true
-    },
-    {
-      id: 5,
-      name: 'Robert Chen',
-      email: 'robert.chen@company.com',
-      role: 'manager',
-      status: 'active',
-      avatar: 'RC',
-      phone: '+1 (555) 567-8901',
-      joinedDate: '2023-01-30',
-      lastLogin: '2024-01-29T14:30:00',
-      propertiesManaged: 38,
-      totalSales: '$2,100,000',
-      department: 'Operations',
-      location: 'San Francisco',
-      permissions: [],
-      isVerified: true
-    },
-    {
-      id: 6,
-      name: 'Lisa Martinez',
-      email: 'lisa.martinez@client.com',
-      role: 'client',
-      status: 'active',
-      avatar: 'LM',
-      phone: '+1 (555) 678-9012',
-      joinedDate: '2023-12-01',
-      lastLogin: '2024-01-28T12:00:00',
-      propertiesManaged: 0,
-      totalSales: '$0',
-      department: 'Client',
-      location: 'Dallas',
-      permissions: [],
-      isVerified: false
-    }
-  ]
-
   // Initialize data
   useEffect(() => {
-    setLoading(true)
-    setTimeout(() => {
-      setUsers(sampleUsers)
-      setFilteredUsers(sampleUsers)
-      setLoading(false)
-    }, 1000)
+    fetchInitialData()
   }, [])
+
+  const fetchInitialData = async () => {
+    try {
+      setLoading(true)
+      const [usersData, rolesData] = await Promise.all([
+        UsersService.getUsers(),
+        RolesService.getRoles()
+      ])
+      setUsers(usersData.data)
+      console.log('rolesData.data', rolesData ?? [])
+      setRoles(rolesData)
+      setFilteredUsers(usersData.data)
+    } catch (error: any) {
+      toast.error('Failed to fetch data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Update roleOptions to use dynamic roles
+  const roleOptions = [
+    { value: 'all', label: 'All Roles' },
+    ...roles.map(role => ({ 
+      value: role.id,
+      label: role.name
+    }))
+  ]
+
+  const getRoleInfo = (roleType: string) => {
+    const role = roles.find(r => r.name.toLowerCase() === roleType.toLowerCase())
+    return role || roles[roles.length - 1]
+  }
 
   // Filter and sort users
   useEffect(() => {
@@ -283,76 +141,45 @@ const UsersPage = () => {
       )
     }
 
-    // Role filter
-    if (filters.role !== 'all') {
-      filtered = filtered.filter(user => user.role === filters.role)
-    }
+    // // Role filter
+    // if (filters.role !== 'all') {
+    //   filtered = filtered.filter(user => user.role === filters.role)
+    // }
 
-    // Status filter
-    if (filters.status !== 'all') {
-      filtered = filtered.filter(user => user.status === filters.status)
-    }
+    // // Status filter
+    // if (filters.status !== 'all') {
+    //   filtered = filtered.filter(user => user.status === filters.status)
+    // }
 
-    // Department filter
-    if (filters.department !== 'all') {
-      filtered = filtered.filter(user => user.department === filters.department)
-    }
+    // // Department filter
+    // if (filters.department !== 'all') {
+    //   filtered = filtered.filter(user => user.department === filters.department)
+    // }
 
     // Sort
-    switch (filters.sortBy) {
-      case 'name':
-        filtered.sort((a, b) => a.name.localeCompare(b.name))
-        break
-      case 'role':
-        filtered.sort((a, b) => a.role.localeCompare(b.role))
-        break
-      case 'sales':
-        filtered.sort((a, b) => 
-          parseFloat(b.totalSales.replace(/[^0-9.-]+/g, '')) - 
-          parseFloat(a.totalSales.replace(/[^0-9.-]+/g, ''))
-        )
-        break
-      case 'oldest':
-        filtered.sort((a, b) => new Date(a.joinedDate).getTime() - new Date(b.joinedDate).getTime())
-        break
-      default: // newest
-        filtered.sort((a, b) => new Date(b.joinedDate).getTime() - new Date(a.joinedDate).getTime())
-    }
+    // switch (filters.sortBy) {
+    //   case 'name':
+    //     filtered.sort((a, b) => a.name.localeCompare(b.name))
+    //     break
+    //   case 'role':
+    //     filtered.sort((a, b) => a.role.localeCompare(b.role))
+    //     break
+    //   case 'sales':
+    //     filtered.sort((a, b) => 
+    //       parseFloat(b.totalSales.replace(/[^0-9.-]+/g, '')) - 
+    //       parseFloat(a.totalSales.replace(/[^0-9.-]+/g, ''))
+    //     )
+    //     break
+    //   case 'oldest':
+    //     filtered.sort((a, b) => new Date(a.joinedDate).getTime() - new Date(b.joinedDate).getTime())
+    //     break
+    //   default: // newest
+    //     filtered.sort((a, b) => new Date(b.joinedDate).getTime() - new Date(a.joinedDate).getTime())
+    // }
 
     setFilteredUsers(filtered)
     setCurrentPage(1)
   }, [users, filters])
-
-  // Filter options
-  const roleOptions = [
-    { value: 'all', label: 'All Roles' },
-    ...roleDefinitions.map(role => ({ value: role.role, label: role.name }))
-  ]
-
-  const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'suspended', label: 'Suspended' }
-  ]
-
-  const departmentOptions = [
-    { value: 'all', label: 'All Departments' },
-    { value: 'Administration', label: 'Administration' },
-    { value: 'Sales', label: 'Sales' },
-    { value: 'Operations', label: 'Operations' },
-    { value: 'Marketing', label: 'Marketing' },
-    { value: 'Client', label: 'Client' }
-  ]
-
-  const sortOptions = [
-    { value: 'newest', label: 'Newest First' },
-    { value: 'oldest', label: 'Oldest First' },
-    { value: 'name', label: 'Name A-Z' },
-    { value: 'role', label: 'Role' },
-    { value: 'sales', label: 'Top Sales' }
-  ]
 
   // Pagination
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
@@ -373,10 +200,6 @@ const UsersPage = () => {
       location: 'all',
       sortBy: 'newest'
     })
-  }
-
-  const getRoleInfo = (role: UserRole) => {
-    return roleDefinitions.find(r => r.role === role) || roleDefinitions[roleDefinitions.length - 1]
   }
 
   const getStatusColor = (status: string) => {
@@ -435,7 +258,7 @@ const UsersPage = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <HomeIcon className="w-5 h-5" />
-                <span className={`${popinsFont['500'].className}`}>{roleDefinitions.length} Roles</span>
+                <span className={`${popinsFont['500'].className}`}>{roles.length} Roles</span>
               </div>
             </div>
           </div>
@@ -460,10 +283,10 @@ const UsersPage = () => {
 
       {/* Role Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mx-6 mb-8">
-        {roleDefinitions.map((role) => {
-          const count = users.filter(user => user.role === role.role).length
+        {roles.map((role) => {
+          const count = users.filter(user => user.role?.name === role.name.toLowerCase()).length
           return (
-            <Card key={role.role} className="text-center hover:scale-105 transition-transform duration-300">
+            <Card key={role.id} className="text-center hover:scale-105 transition-transform duration-300">
               <div className={`w-12 h-12 ${role.color} rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-3`}>
                 {role.name.charAt(0)}
               </div>
@@ -531,12 +354,12 @@ const UsersPage = () => {
                 placeholder="Filter by status"
               />
               
-              <Select
+              {/* <Select
                 options={departmentOptions}
                 value={filters.department}
                 onChange={(e) => handleFilterChange('department', e.target.value)}
                 placeholder="Filter by department"
-              />
+              /> */}
               
               <div className="flex items-center space-x-2">
                 <label className="flex items-center space-x-2 cursor-pointer">
@@ -621,7 +444,7 @@ const UsersPage = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentUsers.map((user) => {
-                  const roleInfo = getRoleInfo(user.role)
+                  const roleInfo = user.role
                   return (
                     <tr 
                       key={user.id} 
@@ -637,7 +460,7 @@ const UsersPage = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-4">
-                          <div className={`w-12 h-12 ${roleInfo.color} rounded-2xl flex items-center justify-center text-white font-bold text-lg`}>
+                          <div className={`w-12 h-12 ${roleInfo?.color} rounded-2xl flex items-center justify-center text-white font-bold text-lg`}>
                             {user.avatar}
                           </div>
                           <div>
@@ -658,8 +481,8 @@ const UsersPage = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${roleInfo.color} text-white`}>
-                            {roleInfo.name}
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${roleInfo?.color} text-white`}>
+                            {roleInfo?.name}
                           </span>
                           <div className={`text-sm text-gray-600 mt-1 ${popinsFont['500'].className}`}>
                             {user.department}
