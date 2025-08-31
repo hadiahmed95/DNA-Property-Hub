@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Card from '@/components/card'
 import Button from '@/components/button'
@@ -14,41 +14,44 @@ import {
   ArrowUpIcon
 } from '@/components/icons'
 import { MontserratFont, popinsFont } from '../../../../fonts'
+import rolesService from '@/services/roles.service'
+import { Role } from '@/types/role'
+import usersService from '@/services/users.service'
+import { User, UserStatus } from '@/types/user'
 
 interface UserFormData {
   // Basic Information
   firstName: string
   lastName: string
   email: string
-  phone: string
+  phone_no: string
   password: string
   confirmPassword: string
   
   // Profile Information
   avatar: File | null
-  role: string
+  role_id: string
   department: string
-  location: string
-  employeeId: string
+  employee_id: string
   
   // Contact Details
-  address: string
+  address_line_1: string
   city: string
   state: string
-  zipCode: string
+  zipcode: string
   country: string
-  emergencyContact: string
-  emergencyPhone: string
+  emergency_contact_name: string
+  emergency_contact_phone: string
   
   // Professional Details
-  title: string
-  startDate: string
+  job_title: string
+  joining_date: string
   manager: string
   skills: string[]
   certifications: string[]
   
   // Settings
-  status: 'active' | 'inactive' | 'pending'
+  status: UserStatus
   emailNotifications: boolean
   smsNotifications: boolean
   marketingEmails: boolean
@@ -58,13 +61,6 @@ interface UserFormData {
   customPermissions: string[]
 }
 
-interface Role {
-  value: string
-  label: string
-  description: string
-  color: string
-}
-
 const AddEditUserPage = () => {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
@@ -72,35 +68,36 @@ const AddEditUserPage = () => {
   const [isEditing, setIsEditing] = useState(false) // This would come from route params
   const [showPassword, setShowPassword] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [roles, setRoles] = useState<Role[]>([])
+  const [users, setUsers] = useState<User[]>([])
 
   const [formData, setFormData] = useState<UserFormData>({
     // Basic Information
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
+    phone_no: '',
     password: '',
     confirmPassword: '',
     
     // Profile Information
     avatar: null,
-    role: '',
+    role_id: '',
     department: '',
-    location: '',
-    employeeId: '',
+    employee_id: '',
     
     // Contact Details
-    address: '',
+    address_line_1: '',
     city: '',
     state: '',
-    zipCode: '',
+    zipcode: '',
     country: 'United States',
-    emergencyContact: '',
-    emergencyPhone: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
     
     // Professional Details
-    title: '',
-    startDate: '',
+    job_title: '',
+    joining_date: '',
     manager: '',
     skills: [],
     certifications: [],
@@ -127,14 +124,7 @@ const AddEditUserPage = () => {
   ]
 
   // Role options
-  const roleOptions: Role[] = [
-    { value: 'super_admin', label: 'Super Admin', description: 'Full system access', color: 'bg-purple-500' },
-    { value: 'admin', label: 'Admin', description: 'Administrative access', color: 'bg-red-500' },
-    { value: 'manager', label: 'Manager', description: 'Team management', color: 'bg-blue-500' },
-    { value: 'agent', label: 'Agent', description: 'Property and client management', color: 'bg-green-500' },
-    { value: 'client', label: 'Client', description: 'Property viewing access', color: 'bg-amber-500' },
-    { value: 'viewer', label: 'Viewer', description: 'Read-only access', color: 'bg-gray-500' }
-  ]
+  const roleOptions: Role[] = roles
 
   const departmentOptions = [
     { value: 'administration', label: 'Administration' },
@@ -144,15 +134,6 @@ const AddEditUserPage = () => {
     { value: 'finance', label: 'Finance' },
     { value: 'hr', label: 'Human Resources' },
     { value: 'it', label: 'Information Technology' }
-  ]
-
-  const locationOptions = [
-    { value: 'new-york', label: 'New York, NY' },
-    { value: 'los-angeles', label: 'Los Angeles, CA' },
-    { value: 'chicago', label: 'Chicago, IL' },
-    { value: 'miami', label: 'Miami, FL' },
-    { value: 'san-francisco', label: 'San Francisco, CA' },
-    { value: 'remote', label: 'Remote' }
   ]
 
   const stateOptions = [
@@ -203,13 +184,12 @@ const AddEditUserPage = () => {
         }
         break
       case 2:
-        if (!formData.role) newErrors.role = 'Role is required'
+        if (!formData.role_id) newErrors.role_id = 'Role is required'
         if (!formData.department) newErrors.department = 'Department is required'
-        if (!formData.location) newErrors.location = 'Location is required'
-        if (!formData.title.trim()) newErrors.title = 'Job title is required'
+        if (!formData.job_title.trim()) newErrors.job_title = 'Job title is required'
         break
       case 3:
-        if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
+        if (!formData.phone_no.trim()) newErrors.phone_no = 'Phone number is required'
         break
     }
 
@@ -257,7 +237,32 @@ const AddEditUserPage = () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000))
-      console.log('User data:', formData)
+      const _formData: User = {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password,
+        status: formData.status,
+        type: 'agent',
+        profile: {
+            role_id: formData.role_id,
+            department: formData.department,
+            job_title: formData.job_title,
+            employee_id: formData.employee_id,
+            joining_date: formData.joining_date,
+            reporting_to_user_id: formData.manager,
+          },
+          contact: {
+              phone_no: formData.phone_no,
+              address_line_1: formData.address_line_1,
+              city: formData.city,
+              state: formData.state,
+              zipcode: formData.zipcode,
+              country: formData.country,
+              emergency_contact_name: formData.emergency_contact_name,
+              emergency_contact_phone: formData.emergency_contact_phone
+          }
+        }
+      await usersService.createUser(_formData)
       router.push('/dashboard/users')
     } catch (error) {
       console.error('Error saving user:', error)
@@ -266,9 +271,7 @@ const AddEditUserPage = () => {
     }
   }
 
-  const getSelectedRole = () => {
-    return roleOptions.find(role => role.value === formData.role)
-  }
+  const getSelectedRole = () => roles.find(role => role.id == formData.role_id)
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -372,16 +375,16 @@ const AddEditUserPage = () => {
               <div>
                 <Select
                   label="Role *"
-                  options={roleOptions.map(role => ({ value: role.value, label: role.label }))}
-                  value={formData.role}
-                  onChange={(e) => handleInputChange('role', e.target.value)}
+                  options={roles.map(role => ({ value: role.id, label: role.name }))}
+                  value={formData.role_id}
+                  onChange={(e) => handleInputChange('role_id', e.target.value)}
                   placeholder="Select role"
-                  error={errors.role}
+                  error={errors.role_id}
                 />
-                {formData.role && (
+                {formData.role_id && (
                   <div className="mt-2 p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-2">
-                      <div className={`w-4 h-4 ${getSelectedRole()?.color} rounded`}></div>
+                      <div className={`w-4 h-4 rounded`} style={{background: getSelectedRole()?.color ?? 'var(--secondary)'}}></div>
                       <span className="text-sm text-gray-700">{getSelectedRole()?.description}</span>
                     </div>
                   </div>
@@ -401,17 +404,17 @@ const AddEditUserPage = () => {
               <Input
                 label="Job Title *"
                 placeholder="Senior Real Estate Agent"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                error={errors.title}
+                value={formData.job_title}
+                onChange={(e) => handleInputChange('job_title', e.target.value)}
+                error={errors.job_title}
               />
               <Select
-                label="Office Location *"
-                options={locationOptions}
-                value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                placeholder="Select location"
-                error={errors.location}
+                label="Manager *"
+                options={users.map(user => ({ value: (user.id as number)?.toString(), label: user.name }))}
+                value={formData.manager}
+                onChange={(e) => handleInputChange('manager', e.target.value)}
+                placeholder="Select reporting manager"
+                error={errors.manager}
               />
             </div>
 
@@ -419,26 +422,19 @@ const AddEditUserPage = () => {
               <Input
                 label="Employee ID"
                 placeholder="EMP001"
-                value={formData.employeeId}
-                onChange={(e) => handleInputChange('employeeId', e.target.value)}
+                value={formData.employee_id}
+                onChange={(e) => handleInputChange('employee_id', e.target.value)}
               />
               <Input
                 label="Start Date"
                 type="date"
-                value={formData.startDate}
-                onChange={(e) => handleInputChange('startDate', e.target.value)}
+                value={formData.joining_date}
+                onChange={(e) => handleInputChange('joining_date', e.target.value)}
               />
             </div>
 
-            <Input
-              label="Manager"
-              placeholder="Select reporting manager"
-              value={formData.manager}
-              onChange={(e) => handleInputChange('manager', e.target.value)}
-            />
-
             {/* Skills Selection */}
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-4">
                 Skills & Expertise
               </label>
@@ -460,7 +456,7 @@ const AddEditUserPage = () => {
                   </label>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         )
 
@@ -470,15 +466,15 @@ const AddEditUserPage = () => {
             <Input
               label="Phone Number *"
               placeholder="+1 (555) 123-4567"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              error={errors.phone}
+              value={formData.phone_no}
+              onChange={(e) => handleInputChange('phone_no', e.target.value)}
+              error={errors.phone_no}
             />
 
             <Input
               label="Address"
               placeholder="123 Main Street"
-              value={formData.address}
+              value={formData.address_line_1}
               onChange={(e) => handleInputChange('address', e.target.value)}
             />
 
@@ -499,7 +495,7 @@ const AddEditUserPage = () => {
               <Input
                 label="ZIP Code"
                 placeholder="10001"
-                value={formData.zipCode}
+                value={formData.zipcode}
                 onChange={(e) => handleInputChange('zipCode', e.target.value)}
               />
             </div>
@@ -518,14 +514,14 @@ const AddEditUserPage = () => {
                 <Input
                   label="Emergency Contact Name"
                   placeholder="Jane Doe"
-                  value={formData.emergencyContact}
+                  value={formData.emergency_contact_name}
                   onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
                 />
                 <Input
                   label="Emergency Contact Phone"
                   placeholder="+1 (555) 987-6543"
-                  value={formData.emergencyPhone}
-                  onChange={(e) => handleInputChange('emergencyPhone', e.target.value)}
+                  value={formData.emergency_contact_phone}
+                  onChange={(e) => handleInputChange('emergency_contact_phone', e.target.value)}
                 />
               </div>
             </div>
@@ -553,7 +549,7 @@ const AddEditUserPage = () => {
             </div>
 
             {/* Notification Preferences */}
-            <div>
+            {/* <div>
               <h3 className={`text-lg font-semibold text-gray-900 mb-4 ${MontserratFont.className}`}>
                 Notification Preferences
               </h3>
@@ -581,10 +577,10 @@ const AddEditUserPage = () => {
                   </label>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* Security Settings */}
-            <div>
+            {/* <div>
               <h3 className={`text-lg font-semibold text-gray-900 mb-4 ${MontserratFont.className}`}>
                 Security Settings
               </h3>
@@ -605,7 +601,7 @@ const AddEditUserPage = () => {
                   </div>
                 </div>
               </label>
-            </div>
+            </div> */}
           </div>
         )
 
@@ -615,7 +611,9 @@ const AddEditUserPage = () => {
             {/* User Summary */}
             <Card variant="gradient">
               <div className="flex items-start space-x-6">
-                <div className={`w-20 h-20 ${getSelectedRole()?.color || 'bg-gray-500'} rounded-2xl flex items-center justify-center text-white text-2xl font-bold flex-shrink-0`}>
+                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white text-2xl font-bold flex-shrink-0`}
+                style={{background: getSelectedRole()?.color ?? '#6a7282'}}
+                >
                   {formData.firstName.charAt(0)}{formData.lastName.charAt(0)}
                 </div>
                 <div className="flex-1">
@@ -623,14 +621,16 @@ const AddEditUserPage = () => {
                     {formData.firstName} {formData.lastName}
                   </h3>
                   <p className={`text-lg text-gray-700 mb-2 ${popinsFont['600'].className}`}>
-                    {formData.title}
+                    {formData.job_title}
                   </p>
                   <p className={`text-gray-600 mb-4 ${popinsFont['400'].className}`}>
-                    {formData.email} • {formData.phone}
+                    {formData.email} • {formData.phone_no}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getSelectedRole()?.color} text-white`}>
-                      {getSelectedRole()?.label}
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold text-white`}
+                    style={{background: getSelectedRole()?.color ?? '#6a7282'}}
+                    >
+                      {getSelectedRole()?.name}
                     </span>
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
                       {departmentOptions.find(d => d.value === formData.department)?.label}
@@ -657,20 +657,16 @@ const AddEditUserPage = () => {
                     <span className="font-medium">{departmentOptions.find(d => d.value === formData.department)?.label}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Location:</span>
-                    <span className="font-medium">{locationOptions.find(l => l.value === formData.location)?.label}</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-gray-600">Employee ID:</span>
-                    <span className="font-medium">{formData.employeeId || 'Not set'}</span>
+                    <span className="font-medium">{formData.employee_id || 'Not set'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Start Date:</span>
-                    <span className="font-medium">{formData.startDate || 'Not set'}</span>
+                    <span className="font-medium">{formData.joining_date || 'Not set'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Manager:</span>
-                    <span className="font-medium">{formData.manager || 'Not assigned'}</span>
+                    <span className="font-medium">{users.find(user => Number(user.id) === Number(formData.manager))?.name || 'Not assigned'}</span>
                   </div>
                 </div>
               </Card>
@@ -682,7 +678,7 @@ const AddEditUserPage = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Address:</span>
-                    <span className="font-medium">{formData.address || 'Not provided'}</span>
+                    <span className="font-medium">{formData.address_line_1 || 'Not provided'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">City, State:</span>
@@ -692,24 +688,24 @@ const AddEditUserPage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">ZIP Code:</span>
-                    <span className="font-medium">{formData.zipCode || 'Not provided'}</span>
+                    <span className="font-medium">{formData.zipcode || 'Not provided'}</span>
                   </div>
-                  {formData.emergencyContact && (
+                  {formData.emergency_contact_name && (
                     <>
                       <div className="flex justify-between border-t pt-3 mt-3">
                         <span className="text-gray-600">Emergency Contact:</span>
-                        <span className="font-medium">{formData.emergencyContact}</span>
+                        <span className="font-medium">{formData.emergency_contact_name}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Emergency Phone:</span>
-                        <span className="font-medium">{formData.emergencyPhone}</span>
+                        <span className="font-medium">{formData.emergency_contact_phone}</span>
                       </div>
                     </>
                   )}
                 </div>
               </Card>
 
-              <Card>
+              {/* <Card>
                 <h4 className={`text-lg font-bold text-gray-900 mb-4 ${MontserratFont.className}`}>
                   Skills & Expertise
                 </h4>
@@ -726,9 +722,9 @@ const AddEditUserPage = () => {
                     No skills selected
                   </p>
                 )}
-              </Card>
+              </Card> */}
 
-              <Card>
+              {/* <Card>
                 <h4 className={`text-lg font-bold text-gray-900 mb-4 ${MontserratFont.className}`}>
                   Account Settings
                 </h4>
@@ -751,27 +747,29 @@ const AddEditUserPage = () => {
                     </div>
                   ))}
                 </div>
-              </Card>
+              </Card> */}
             </div>
 
             {/* Role Permissions Preview */}
-            {formData.role && (
+            {formData.role_id && (
               <Card>
                 <h4 className={`text-lg font-bold text-gray-900 mb-4 ${MontserratFont.className}`}>
                   Role Permissions Preview
                 </h4>
                 <div className="text-center py-8">
-                  <div className={`w-16 h-16 ${getSelectedRole()?.color} rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-4`}>
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-4`}
+                  style={{background: getSelectedRole()?.color ?? 'var(--secondary)'}}
+                  >
                     🛡️
                   </div>
                   <h5 className={`text-lg font-semibold text-gray-900 mb-2 ${MontserratFont.className}`}>
-                    {getSelectedRole()?.label} Role
+                    {getSelectedRole()?.name} Role
                   </h5>
                   <p className={`text-gray-600 mb-4 ${popinsFont['400'].className}`}>
                     {getSelectedRole()?.description}
                   </p>
                   <p className={`text-sm text-gray-500 ${popinsFont['400'].className}`}>
-                    This user will have all permissions associated with the {getSelectedRole()?.label} role
+                    This user will have all permissions associated with the {getSelectedRole()?.name} role
                   </p>
                 </div>
               </Card>
@@ -783,6 +781,16 @@ const AddEditUserPage = () => {
         return null
     }
   }
+
+  useEffect(() => {
+    rolesService.getRoles().then(response => {
+      setRoles(response)
+    })
+
+    usersService.getUsers().then(response => {
+      setUsers(response.data)
+    })
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30">

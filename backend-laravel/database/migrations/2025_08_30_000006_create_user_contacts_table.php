@@ -12,13 +12,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('phone_no');
-            $table->string('address_line_1');
-            $table->string('city');
-            $table->string('state');
-            $table->string('zipcode');
-            $table->string('country');
-            $table->string('emergency_contact_name');
-            $table->string('emergency_contact_phone');
+            $table->string('address_line_1')->nullable();
+            $table->string('city')->nullable();
+            $table->string('state')->nullable();
+            $table->string('zipcode')->nullable();
+            $table->string('country')->nullable();
+            $table->string('emergency_contact_name')->nullable();
+            $table->string('emergency_contact_phone')->nullable();
             $table->timestamps();
         });
     }

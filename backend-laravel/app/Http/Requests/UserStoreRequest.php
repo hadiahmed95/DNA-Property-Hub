@@ -21,21 +21,21 @@ class UserStoreRequest extends FormRequest
             'status' => 'nullable|in:active,inactive',
             
             'profile.role_id' => 'required|exists:roles,id',
-            'profile.department' => 'required|string',
+            'profile.department' => 'nullable|string',
             'profile.job_title' => 'required|string',
-            'profile.employee_id' => 'required|unique:user_profiles,employee_id',
-            'profile.joining_date' => 'required|date',
+            'profile.employee_id' => 'nullable|unique:user_profiles,employee_id',
+            'profile.joining_date' => 'nullable|date',
             'profile.reporting_to_user_id' => 'nullable|exists:users,id',
-            'profile.skill_experties' => 'required|string',
+            'profile.skill_experties' => 'nullable|string',
             
             'contact.phone_no' => 'required|string',
-            'contact.address_line_1' => 'required|string',
-            'contact.city' => 'required|string',
-            'contact.state' => 'required|string',
-            'contact.zipcode' => 'required|string',
-            'contact.country' => 'required|string',
-            'contact.emergency_contact_name' => 'required|string',
-            'contact.emergency_contact_phone' => 'required|string',
+            'contact.address_line_1' => 'nullable|string',
+            'contact.city' => 'nullable|string',
+            'contact.state' => 'nullable|string',
+            'contact.zipcode' => 'nullable|string',
+            'contact.country' => 'nullable|string',
+            'contact.emergency_contact_name' => 'nullable|string',
+            'contact.emergency_contact_phone' => 'nullable|string',
         ];
     }
 }

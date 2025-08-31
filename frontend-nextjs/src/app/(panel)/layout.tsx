@@ -59,18 +59,18 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
         { name: 'Roles & Permissions', href: '/dashboard/users/role-management' }
       ]
     },
-    { 
-      name: 'Clients', 
-      href: '/dashboard/clients', 
-      icon: UsersIcon,
-      description: 'Customer Management'
-    },
-    { 
-      name: 'Analytics', 
-      href: '/dashboard/analytics', 
-      icon: AnalyticsIcon,
-      description: 'Reports & Insights'
-    },
+    // { 
+    //   name: 'Clients', 
+    //   href: '/dashboard/clients', 
+    //   icon: UsersIcon,
+    //   description: 'Customer Management'
+    // },
+    // { 
+    //   name: 'Analytics', 
+    //   href: '/dashboard/analytics', 
+    //   icon: AnalyticsIcon,
+    //   description: 'Reports & Insights'
+    // },
     { 
       name: 'Settings', 
       href: '/dashboard/settings', 

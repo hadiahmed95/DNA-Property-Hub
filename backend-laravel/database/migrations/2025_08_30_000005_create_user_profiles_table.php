@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('role_id')->constrained();
             $table->string('department');
             $table->string('job_title');
-            $table->string('employee_id')->unique();
+            $table->string('employee_id')->unique()->nullable();
             $table->date('joining_date');
             $table->foreignId('reporting_to_user_id')->nullable()->constrained('users');
             $table->text('skill_experties');

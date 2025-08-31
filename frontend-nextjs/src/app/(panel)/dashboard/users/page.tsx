@@ -21,26 +21,53 @@ import {
 import { MontserratFont, popinsFont } from '../../../fonts'
 import toast from 'react-hot-toast'
 import { Role } from '@/types/role'
+import { useRouter } from 'next/navigation'
 
 // User Types and Interfaces
 export type UserRole = { name: string, color: string}
+
+interface UserProfile {
+  id: number
+  user_id: number
+  role_id: number
+  department: string
+  job_title: string
+  employee_id: string
+  joining_date: string
+  reporting_to_user_id: number
+  skill_experties: string
+  created_at: string
+  updated_at: string
+
+  role: Role | null
+}
+
+interface UserContact {
+  id: number
+  user_id: number
+  phone_no: string
+  address_line_1: string
+  city: string
+  state: string
+  zipcode: string
+  country: string
+  emergency_contact_name: string
+  emergency_contact_phone: string
+  created_at: string
+  updated_at: string
+}
 
 export interface User {
   id: number
   name: string
   email: string
-  role: UserRole
-  status: 'active' | 'inactive' | 'pending' | 'suspended'
-  avatar: string
-  phone: string
-  joinedDate: string
-  lastLogin: string
-  propertiesManaged: number
-  totalSales: string
-  department: string
-  location: string
-  permissions: string[]
-  isVerified: boolean
+  email_verified_at: string | null
+  type: string
+  status: string
+  created_at: string
+  updated_at: string
+  profile: UserProfile | null
+  contact: UserContact | null
 }
 
 export interface RolePermissions {
@@ -91,6 +118,8 @@ const UsersPage = () => {
     sortBy: 'newest'
   })
 
+  const router = useRouter()
+
   // Initialize data
   useEffect(() => {
     fetchInitialData()
@@ -104,7 +133,6 @@ const UsersPage = () => {
         RolesService.getRoles()
       ])
       setUsers(usersData.data)
-      console.log('rolesData.data', rolesData ?? [])
       setRoles(rolesData)
       setFilteredUsers(usersData.data)
     } catch (error: any) {
@@ -137,7 +165,7 @@ const UsersPage = () => {
       filtered = filtered.filter(user =>
         user.name.toLowerCase().includes(filters.search.toLowerCase()) ||
         user.email.toLowerCase().includes(filters.search.toLowerCase()) ||
-        user.department.toLowerCase().includes(filters.search.toLowerCase())
+        user.profile?.department.toLowerCase().includes(filters.search.toLowerCase())
       )
     }
 
@@ -274,6 +302,7 @@ const UsersPage = () => {
               variant="secondary" 
               className="bg-white hover:bg-gray-50 text-[var(--primary)] border-0"
               icon={<PlusIcon className="w-4 h-4" />}
+              onClick={() => router.push('/dashboard/users/add')}
             >
               Add User
             </Button>
@@ -284,10 +313,12 @@ const UsersPage = () => {
       {/* Role Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mx-6 mb-8">
         {roles.map((role) => {
-          const count = users.filter(user => user.role?.name === role.name.toLowerCase()).length
+          const count = users.filter(user => user.profile?.role?.name === role.name.toLowerCase()).length
           return (
             <Card key={role.id} className="text-center hover:scale-105 transition-transform duration-300">
-              <div className={`w-12 h-12 ${role.color} rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-3`}>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-3`}
+                style={{background: role.color}}
+              >
                 {role.name.charAt(0)}
               </div>
               <div className={`text-2xl font-bold text-gray-900 ${MontserratFont.className}`}>
@@ -444,7 +475,8 @@ const UsersPage = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentUsers.map((user) => {
-                  const roleInfo = user.role
+                  const roleInfo = roles.find(r => Number(r.id) === user.profile?.role_id)
+                  console.log('roleInfo', roleInfo)
                   return (
                     <tr 
                       key={user.id} 
@@ -460,13 +492,15 @@ const UsersPage = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-4">
-                          <div className={`w-12 h-12 ${roleInfo?.color} rounded-2xl flex items-center justify-center text-white font-bold text-lg`}>
-                            {user.avatar}
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg`}
+                          style={{background: roleInfo?.color ?? '#6a7282'}}
+                          >
+                            {user.name.charAt(0)}
                           </div>
                           <div>
                             <div className={`text-sm font-medium text-gray-900 ${popinsFont['600'].className}`}>
                               {user.name}
-                              {user.isVerified && (
+                              {user.email_verified_at && (
                                 <span className="ml-2 text-emerald-500">✓</span>
                               )}
                             </div>
@@ -474,21 +508,23 @@ const UsersPage = () => {
                               {user.email}
                             </div>
                             <div className={`text-xs text-gray-400 ${popinsFont['400'].className}`}>
-                              {user.phone}
+                              {user.contact?.phone_no || 'No phone'}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${roleInfo?.color} text-white`}>
-                            {roleInfo?.name}
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-white`}
+                            style={{background: roleInfo?.color || '#6a7282'}}
+                          >
+                            {roleInfo?.name || user.type}
                           </span>
                           <div className={`text-sm text-gray-600 mt-1 ${popinsFont['500'].className}`}>
-                            {user.department}
+                            {user.profile?.department || 'No department'}
                           </div>
                           <div className={`text-xs text-gray-400 ${popinsFont['400'].className}`}>
-                            {user.location}
+                            {user.contact?.city ? user.contact?.city + ',' : ''} {user.contact?.country || 'No location'}
                           </div>
                         </div>
                       </td>
@@ -498,20 +534,20 @@ const UsersPage = () => {
                             {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                           </span>
                           <div className={`text-xs text-gray-500 mt-1 ${popinsFont['400'].className}`}>
-                            Joined: {new Date(user.joinedDate).toLocaleDateString()}
+                            Joined: {user.profile?.joining_date ? new Date(user.profile.joining_date).toLocaleDateString() : new Date(user.created_at).toLocaleDateString()}
                           </div>
                           <div className={`text-xs text-gray-400 ${popinsFont['400'].className}`}>
-                            Last: {new Date(user.lastLogin).toLocaleDateString()}
+                            ID: {user.profile?.employee_id || 'N/A'}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
                           <div className={`text-sm font-medium text-gray-900 ${popinsFont['600'].className}`}>
-                            {user.totalSales}
+                            {user.profile?.job_title || 'No title'}
                           </div>
                           <div className={`text-xs text-gray-600 ${popinsFont['400'].className}`}>
-                            {user.propertiesManaged} properties
+                            {user.profile?.skill_experties || ''}
                           </div>
                         </div>
                       </td>

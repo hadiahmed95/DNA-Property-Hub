@@ -7,14 +7,16 @@ use Illuminate\Support\Facades\Route;
 
 // API v1 Routes
 Route::prefix('v1')->group(function () {
-    // Auth routes
+    // Auth routes - No auth required
     Route::prefix('auth')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
+        Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:api');
+        Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth:api');
     });
 
-    // Protected routes
-    Route::middleware('auth:api')->group(function () {
+    // Protected routes - Auth required
+    Route::middleware(['auth:api'])->group(function () {
         Route::get('user', [AuthController::class, 'getLoggedInUser']);
 
         // User management routes

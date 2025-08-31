@@ -3,15 +3,14 @@ export interface Role {
   name: string
   description: string
   color: string
-  permissions: string[]
+  permissions: Permission[]
+  user_count: number
   is_default: boolean
   created_at: string
   updated_at: string
 }
 
 export interface Permission {
-  id: string
-  name: string
-  description: string
-  category: 'properties' | 'users' | 'blogs' | 'pages'
+    role_id: string
+    permission: string
 }

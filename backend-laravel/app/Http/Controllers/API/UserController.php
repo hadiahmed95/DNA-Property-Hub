@@ -25,7 +25,7 @@ class UserController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
-                'type' => $request->type,
+                'type' => $request->type ?? 'agent',
                 'status' => $request->status ?? 'active',
             ]);
 

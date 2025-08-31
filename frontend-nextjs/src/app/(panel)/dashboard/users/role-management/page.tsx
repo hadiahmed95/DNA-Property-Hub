@@ -14,6 +14,7 @@ import {
   SettingsIcon,
 } from '@/components/icons'
 import { MontserratFont, popinsFont } from '../../../../fonts'
+import { Role } from '@/types/role'
 
 // Types
 interface Permission {
@@ -23,28 +24,16 @@ interface Permission {
   category: 'properties' | 'users' | 'blogs' | 'pages'
 }
 
-interface Role {
-  id: string
-  name: string
-  description: string
-  color: string
-  user_count: number
+interface RoleForm extends Omit<Role, 'permissions'> {
   permissions: string[]
-  is_default: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-interface RoleData extends Omit<Role, 'permissions'> {
-  permissions: { permission: string }[]
 }
 
 const RoleManagementPage = () => {
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  const [selectedRole, setSelectedRole] = useState<RoleForm | null>(null)
   const [showAddRole, setShowAddRole] = useState(false)
-  const [editingRole, setEditingRole] = useState<Role | null>(null)
-  const [roles, setRoles] = useState<Role[]>([])
-  const [newRole, setNewRole] = useState<Partial<Role>>({
+  const [editingRole, setEditingRole] = useState<RoleForm | null>(null)
+  const [roles, setRoles] = useState<RoleForm[]>([])
+  const [newRole, setNewRole] = useState<Partial<RoleForm>>({
     name: '',
     description: '',
     color: '#2b7fff',
@@ -84,11 +73,11 @@ const RoleManagementPage = () => {
   const fetchRoles = async () => {
     try {
       setLoading(true)
-      const data: RoleData[] = await RolesService.getRoles()
+      const data: Role[] = await RolesService.getRoles()
       console.log('data', data);
-      setRoles(data.map((d: RoleData) => ({
+      setRoles(data.map((d) => ({
         ...d,
-        permissions: d.permissions.map((p: { permission: string }) => p.permission),
+        permissions: d.permissions.map((p) => p.permission),
       })))
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to fetch roles')
@@ -135,7 +124,7 @@ const RoleManagementPage = () => {
         await RolesService.updateRole(editingRole.id, editingRole)
         toast.success('Role updated successfully')
       } else if (newRole.name && newRole.description) {
-        await RolesService.createRole(newRole)
+        await RolesService.createRole(newRole as RoleForm)
         toast.success('Role created successfully')
       }
       fetchRoles()

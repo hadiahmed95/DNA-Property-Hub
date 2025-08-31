@@ -127,12 +127,12 @@ const DashboardPage = () => {
               >
                 Add New Property
               </Button>
-              <Button
+              {/* <Button
                 variant="secondary"
                 className="bg-white hover:bg-gray-50 text-[var(--primary)] border-0"
               >
                 View Analytics
-              </Button>
+              </Button> */}
             </div>
           </div>
           <div className="relative">
