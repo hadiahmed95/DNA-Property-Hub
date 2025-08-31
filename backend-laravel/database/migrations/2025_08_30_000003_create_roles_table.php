@@ -11,6 +11,10 @@ return new class extends Migration
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('description')->nullable();
+            $table->string('color')->nullable();
+            $table->integer('user_count')->default(0);
+            $table->boolean('is_default')->default(false);
             $table->timestamps();
         });
     }

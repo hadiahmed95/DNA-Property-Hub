@@ -1,17 +1,17 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import RolesService from '@/services/roles.service'
+import { toast } from 'react-hot-toast'
 import Card from '@/components/card'
 import Button from '@/components/button'
 import Input from '@/components/form/input'
 import { 
-  SearchIcon,
   EditIcon,
   TrashIcon,
   PlusIcon,
   UsersIcon,
   SettingsIcon,
-  EyeIcon
 } from '@/components/icons'
 import { MontserratFont, popinsFont } from '../../../../fonts'
 
@@ -28,17 +28,29 @@ interface Role {
   name: string
   description: string
   color: string
-  userCount: number
+  user_count: number
   permissions: string[]
-  isDefault: boolean
+  is_default: boolean
   createdAt: string
   updatedAt: string
+}
+
+interface RoleData extends Omit<Role, 'permissions'> {
+  permissions: { permission: string }[]
 }
 
 const RoleManagementPage = () => {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null)
   const [showAddRole, setShowAddRole] = useState(false)
   const [editingRole, setEditingRole] = useState<Role | null>(null)
+  const [roles, setRoles] = useState<Role[]>([])
+  const [newRole, setNewRole] = useState<Partial<Role>>({
+    name: '',
+    description: '',
+    color: '#2b7fff',
+    permissions: []
+  })
+  const [loading, setLoading] = useState(false)
 
   // Available Permissions
   const availablePermissions: Permission[] = [
@@ -65,103 +77,25 @@ const RoleManagementPage = () => {
     { id: 'pages.update', name: 'Edit Pages', description: 'Modify page content', category: 'pages' },
   ]
 
-  // Sample Roles
-  const [roles, setRoles] = useState<Role[]>([
-    {
-      id: '1',
-      name: 'Super Admin',
-      description: 'Full system access with all permissions',
-      color: 'bg-purple-500',
-      userCount: 1,
-      permissions: availablePermissions.map(p => p.id),
-      isDefault: true,
-      createdAt: '2023-01-01',
-      updatedAt: '2024-01-30'
-    },
-    {
-      id: '2',
-      name: 'Admin',
-      description: 'Administrative access with user management',
-      color: 'bg-red-500',
-      userCount: 3,
-      permissions: [
-        'properties.create', 'properties.read', 'properties.update', 'properties.delete', 'properties.publish',
-        'users.create', 'users.read', 'users.update', 'users.roles',
-        'analytics.read', 'analytics.export',
-        'settings.read',
-        'clients.create', 'clients.read', 'clients.update', 'clients.delete', 'clients.communication'
-      ],
-      isDefault: true,
-      createdAt: '2023-01-01',
-      updatedAt: '2024-01-25'
-    },
-    {
-      id: '3',
-      name: 'Manager',
-      description: 'Team management and property oversight',
-      color: 'bg-blue-500',
-      userCount: 5,
-      permissions: [
-        'properties.create', 'properties.read', 'properties.update', 'properties.publish',
-        'users.read', 'users.update',
-        'analytics.read',
-        'settings.read',
-        'clients.create', 'clients.read', 'clients.update', 'clients.communication'
-      ],
-      isDefault: true,
-      createdAt: '2023-01-01',
-      updatedAt: '2024-01-20'
-    },
-    {
-      id: '4',
-      name: 'Agent',
-      description: 'Property and client management',
-      color: 'bg-green-500',
-      userCount: 12,
-      permissions: [
-        'properties.create', 'properties.read', 'properties.update',
-        'users.read',
-        'analytics.read',
-        'settings.read',
-        'clients.create', 'clients.read', 'clients.update', 'clients.communication'
-      ],
-      isDefault: true,
-      createdAt: '2023-01-01',
-      updatedAt: '2024-01-15'
-    },
-    {
-      id: '5',
-      name: 'Client',
-      description: 'Property viewing and inquiry access',
-      color: 'bg-amber-500',
-      userCount: 28,
-      permissions: [
-        'properties.read',
-        'clients.read', 'clients.update'
-      ],
-      isDefault: true,
-      createdAt: '2023-01-01',
-      updatedAt: '2024-01-10'
-    },
-    {
-      id: '6',
-      name: 'Viewer',
-      description: 'Read-only access to properties',
-      color: 'bg-gray-500',
-      userCount: 8,
-      permissions: ['properties.read'],
-      isDefault: false,
-      createdAt: '2023-06-01',
-      updatedAt: '2023-12-15'
-    }
-  ])
+  useEffect(() => {
+    fetchRoles()
+  }, [])
 
-  const [newRole, setNewRole] = useState<Partial<Role>>({
-    name: '',
-    description: '',
-    color: 'bg-blue-500',
-    permissions: []
-  })
+  const fetchRoles = async () => {
+    try {
+      setLoading(true)
+      const data: RoleData[] = await RolesService.getRoles()
+      console.log('data', data);
+      setRoles(data.map((d: RoleData) => ({
+        ...d,
+        permissions: d.permissions.map((p: { permission: string }) => p.permission),
+      })))
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to fetch roles')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -169,11 +103,9 @@ const RoleManagementPage = () => {
         return 'bg-green-100 text-green-800 border-green-200'
       case 'users':
         return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'analytics':
+      case 'blogs':
         return 'bg-purple-100 text-purple-800 border-purple-200'
-      case 'settings':
-        return 'bg-gray-100 text-gray-800 border-gray-200'
-      case 'clients':
+      case 'pages':
         return 'bg-amber-100 text-amber-800 border-amber-200'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
@@ -196,47 +128,48 @@ const RoleManagementPage = () => {
       : [...rolePermissions, permissionId]
   }
 
-  const handleSaveRole = () => {
-    if (editingRole) {
-      // Update existing role
-      setRoles(prev => prev.map(role => 
-        role.id === editingRole.id 
-          ? { ...editingRole, updatedAt: new Date().toISOString().split('T')[0] }
-          : role
-      ))
-      setEditingRole(null)
-    } else if (newRole.name && newRole.description) {
-      // Create new role
-      const role: Role = {
-        id: Date.now().toString(),
-        name: newRole.name,
-        description: newRole.description,
-        color: newRole.color || 'bg-blue-500',
-        userCount: 0,
-        permissions: newRole.permissions || [],
-        isDefault: false,
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0]
+  const handleSaveRole = async () => {
+    try {
+      setLoading(true)
+      if (editingRole) {
+        await RolesService.updateRole(editingRole.id, editingRole)
+        toast.success('Role updated successfully')
+      } else if (newRole.name && newRole.description) {
+        await RolesService.createRole(newRole)
+        toast.success('Role created successfully')
       }
-      setRoles(prev => [...prev, role])
-      setNewRole({ name: '', description: '', color: 'bg-blue-500', permissions: [] })
+      fetchRoles()
+      setEditingRole(null)
       setShowAddRole(false)
+      setNewRole({ name: '', description: '', color: '#2b7fff', permissions: [] })
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to save role')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleDeleteRole = (roleId: string) => {
-    const role = roles.find(r => r.id === roleId)
-    if (role && !role.isDefault) {
-      setRoles(prev => prev.filter(r => r.id !== roleId))
+  const handleDeleteRole = async (roleId: string) => {
+    if (!window.confirm('Are you sure you want to delete this role?')) return
+
+    try {
+      setLoading(true)
+      await RolesService.deleteRole(roleId)
+      toast.success('Role deleted successfully')
+      fetchRoles()
       if (selectedRole?.id === roleId) {
         setSelectedRole(null)
       }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete role')
+    } finally {
+      setLoading(false)
     }
   }
 
   const colorOptions = [
-    'bg-purple-500', 'bg-red-500', 'bg-blue-500', 'bg-green-500', 
-    'bg-amber-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
+    '#ad46ff', '#fa2c37', '#2b7fff', '#00c950', 
+    '#fe9900', '#f6339a', '#615fff', '#00bba7'
   ]
 
   return (
@@ -306,20 +239,21 @@ const RoleManagementPage = () => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 ${role.color} rounded-xl flex items-center justify-center text-white font-bold`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold`}
+                      style={{ backgroundColor: role.color }}>
                         {role.name.charAt(0)}
                       </div>
                       <div>
                         <div className={`font-semibold text-gray-900 ${popinsFont['600'].className}`}>
                           {role.name}
-                          {role.isDefault && (
+                          {role.is_default && (
                             <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                               Default
                             </span>
                           )}
                         </div>
                         <div className={`text-sm text-gray-600 ${popinsFont['400'].className}`}>
-                          {role.userCount} user{role.userCount !== 1 ? 's' : ''}
+                          {role.user_count} user{role.user_count !== 1 ? 's' : ''}
                         </div>
                       </div>
                     </div>
@@ -334,7 +268,7 @@ const RoleManagementPage = () => {
                       >
                         <EditIcon className="w-4 h-4" />
                       </button>
-                      {!role.isDefault && (
+                      {!role.is_default && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -379,7 +313,7 @@ const RoleManagementPage = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className={`text-sm text-gray-600 ${popinsFont['500'].className}`}>
-                    {selectedRole.userCount} users
+                    {selectedRole.user_count} users
                   </div>
                   <Button
                     variant="ghost"
@@ -510,11 +444,14 @@ const RoleManagementPage = () => {
                             setNewRole({ ...newRole, color })
                           }
                         }}
-                        className={`w-8 h-8 ${color} rounded-lg border-2 transition-all duration-200 ${
+                        className={`w-8 h-8 rounded-lg ring-2 transition-all duration-200 ${
                           (editingRole ? editingRole.color : newRole.color) === color
-                            ? 'border-gray-900 scale-110'
-                            : 'border-gray-300 hover:border-gray-400'
+                            ? 'ring-[var(--secondary)] scale-110'
+                            : 'ring-gray-100'
                         }`}
+                        style={{
+                          background: color ?? 'white'
+                        }}
                       />
                     ))}
                   </div>
@@ -528,7 +465,7 @@ const RoleManagementPage = () => {
                 <textarea
                   rows={3}
                   placeholder="Describe the role and its responsibilities..."
-                  value={editingRole ? editingRole.description : newRole.description}
+                  value={(editingRole ? editingRole.description : newRole.description) ?? ''}
                   onChange={(e) => {
                     if (editingRole) {
                       setEditingRole({ ...editingRole, description: e.target.value })

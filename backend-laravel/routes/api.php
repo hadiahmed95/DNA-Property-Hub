@@ -5,21 +5,28 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\RoleController;
 use Illuminate\Support\Facades\Route;
 
-// Auth routes
-Route::post('register', [AuthController::class, 'register']);
-Route::post('login', [AuthController::class, 'login']);
+// API v1 Routes
+Route::prefix('v1')->group(function () {
+    // Auth routes
+    Route::prefix('auth')->group(function () {
+        Route::post('register', [AuthController::class, 'register']);
+        Route::post('login', [AuthController::class, 'login']);
+    });
 
-// Protected routes
-Route::middleware('auth:api')->group(function () {
-    Route::get('user', [AuthController::class, 'getLoggedInUser']);
+    // Protected routes
+    Route::middleware('auth:api')->group(function () {
+        Route::get('user', [AuthController::class, 'getLoggedInUser']);
 
-    // User routes
-    Route::get('users', [UserController::class, 'index']);
-    Route::post('users', [UserController::class, 'store']);
-    Route::get('users/{user}', [UserController::class, 'show']);
-    Route::put('users/{user}', [UserController::class, 'update']);
-    Route::delete('users/{user}', [UserController::class, 'destroy']);
+        // User management routes
+        Route::prefix('users')->group(function () {
+            Route::get('/', [UserController::class, 'index']);
+            Route::post('/', [UserController::class, 'store']);
+            Route::get('/{user}', [UserController::class, 'show']);
+            Route::put('/{user}', [UserController::class, 'update']);
+            Route::delete('/{user}', [UserController::class, 'destroy']);
+        });
 
-    // Roles routes
-    Route::apiResource('roles', RoleController::class);
+        // Role management routes
+        Route::apiResource('roles', RoleController::class);
+    });
 });

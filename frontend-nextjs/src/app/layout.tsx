@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { popinsFont } from "./fonts";
+import { AuthProvider } from "@/contexts/auth.context";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "DNA Properties Hub",
@@ -15,9 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${popinsFont['400'].className} antialiased bg-[#f3f6f8]`}
+        className={`${popinsFont["400"].className} antialiased bg-[#f3f6f8]`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+          <Toaster position="top-right" />
+        </AuthProvider>
       </body>
     </html>
   );

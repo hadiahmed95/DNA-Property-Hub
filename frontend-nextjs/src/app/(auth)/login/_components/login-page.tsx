@@ -4,8 +4,12 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import Button from '@/components/button'
 import { MontserratFont, popinsFont } from '../../../fonts'
+import { useRouter } from 'next/navigation'
+import AuthService from '@/services/auth.service'
+import { toast } from 'react-hot-toast'
 
 const LoginPage = () => {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,14 +29,22 @@ const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      const response = await AuthService.login({
+        email: formData.email,
+        password: formData.password,
+        remember_me: formData.rememberMe
+      })
+
+      if (response.access_token) {
+        router.push('/dashboard')
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Login failed')
+    } finally {
       setIsLoading(false)
-      console.log('Login data:', formData)
-      // Redirect to dashboard or home page after successful login
-      // window.location.href = '/dashboard'
-    }, 2000)
+    }
   }
 
   return (
