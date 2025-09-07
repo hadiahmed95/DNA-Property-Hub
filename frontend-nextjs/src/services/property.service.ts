@@ -89,7 +89,6 @@ class PropertyService {
     }
   }
 
-  // Other methods remain the same...
   async getProperties(filters = {}) {
     const params = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
@@ -142,11 +141,22 @@ class PropertyService {
     return response.data
   }
 
+  // FIXED: Properly handle all filter parameters including search
   async getMyProperties(page = 1, perPage = 10, extraParams = {}) {
     const params = new URLSearchParams({
         page: page.toString(),
-        per_page: perPage.toString(),
-        ...extraParams // Add all filter parameters
+        per_page: perPage.toString()
+    })
+
+    // Add all filter parameters properly
+    Object.entries(extraParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== '' && value !== null) {
+        if (Array.isArray(value)) {
+          params.append(key, value.join(','))
+        } else {
+          params.append(key, value.toString())
+        }
+      }
     })
 
     const response = await axios.get(

@@ -174,10 +174,45 @@ class PropertyRepository
     }
 
     /**
+     * Get properties by user with filters.
+     */
+    public function getPropertiesByUserWithFilters(int $userId, array $filters = [], int $perPage = 15): LengthAwarePaginator
+    {
+        $query = Property::with(['creator', 'filterValues.filterGroup'])
+            ->where('created_by', $userId);
+
+        $query = $this->applyFilters($query, $filters);
+
+        return $query->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Search user's properties with filters.
+     */
+    public function searchUserProperties(int $userId, string $searchQuery, array $filters = [], int $perPage = 15): LengthAwarePaginator
+    {
+        $query = Property::with(['creator', 'filterValues.filterGroup'])
+            ->where('created_by', $userId)
+            ->search($searchQuery);
+
+        // Apply filters to search results
+        $query = $this->applyFilters($query, $filters);
+
+        return $query->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
      * Apply filters to query.
      */
     private function applyFilters($query, array $filters)
     {
+        // Search query filter - NEW ADDITION
+        if (!empty($filters['q'])) {
+            $query->search($filters['q']);
+        }
+
         // Price range filter
         if (!empty($filters['min_price']) || !empty($filters['max_price'])) {
             $query->priceRange($filters['min_price'] ?? null, $filters['max_price'] ?? null);
@@ -317,35 +352,5 @@ class PropertyRepository
             ['min' => $min + ($step * 3), 'max' => $min + ($step * 4), 'label' => '$' . number_format($min + ($step * 3)) . ' - $' . number_format($min + ($step * 4))],
             ['min' => $min + ($step * 4), 'max' => $max, 'label' => '$' . number_format($min + ($step * 4)) . ' - $' . number_format($max)],
         ];
-    }
-
-    /**
-     * Get properties by user with filters - NEW METHOD.
-     */
-    public function getPropertiesByUserWithFilters(int $userId, array $filters = [], int $perPage = 15): LengthAwarePaginator
-    {
-        $query = Property::with(['creator', 'filterValues.filterGroup'])
-            ->where('created_by', $userId);
-
-        $query = $this->applyFilters($query, $filters);
-
-        return $query->orderBy('created_at', 'desc')
-            ->paginate($perPage);
-    }
-
-    /**
-     * Search user's properties with filters - NEW METHOD.
-     */
-    public function searchUserProperties(int $userId, string $searchQuery, array $filters = [], int $perPage = 15): LengthAwarePaginator
-    {
-        $query = Property::with(['creator', 'filterValues.filterGroup'])
-            ->where('created_by', $userId)
-            ->search($searchQuery);
-
-        // Apply filters to search results
-        $query = $this->applyFilters($query, $filters);
-
-        return $query->orderBy('created_at', 'desc')
-            ->paginate($perPage);
     }
 }

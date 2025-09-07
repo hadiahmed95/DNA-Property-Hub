@@ -205,13 +205,28 @@ class PropertyController extends Controller
      */
     public function myProperties(Request $request): AnonymousResourceCollection
     {
-        $filters = $this->buildFilters($request); // ADD THIS LINE
+        $filters = $this->buildFilters($request);
         $perPage = $request->get('per_page', 15);
-        $properties = $this->propertyRepository->getPropertiesByUserWithFilters(auth()->id(), $filters, $perPage); // CHANGE THIS LINE
+        
+        // Check if search query exists
+        if (!empty($filters['q'])) {
+            $properties = $this->propertyRepository->searchUserProperties(
+                auth()->id(), 
+                $filters['q'], 
+                $filters, 
+                $perPage
+            );
+        } else {
+            $properties = $this->propertyRepository->getPropertiesByUserWithFilters(
+                auth()->id(), 
+                $filters, 
+                $perPage
+            );
+        }
         
         return PropertyResource::collection($properties)->additional([
             'meta' => [
-                'filters_applied' => $filters, // ADD THIS LINE
+                'filters_applied' => $filters,
                 'total_properties' => $properties->total(),
             ]
         ]);
@@ -288,6 +303,11 @@ class PropertyController extends Controller
     private function buildFilters(Request $request): array
     {
         $filters = [];
+
+        // Search query - NEW ADDITION
+        if ($request->has('q')) {
+            $filters['q'] = $request->get('q');
+        }
 
         // Price range
         if ($request->has('min_price')) {

@@ -219,9 +219,30 @@ const AddPropertyPage = () => {
 
     setLoading(true)
     try {
-      // Convert formData to API format
+      // Convert formData to API format with PROPER filter handling
       const filters: Record<string, number[]> = {}
       
+      if (formData.propertyType) {
+        const propertyTypeGroup = filterGroups.find(g => g.slug === 'property_type')
+        if (propertyTypeGroup) {
+          const typeValue = filterValues['property_type']?.find(v => v.value === formData.propertyType)
+          if (typeValue) {
+            filters[propertyTypeGroup.id.toString()] = [typeValue.id]
+          }
+        }
+      }
+
+      if (formData.status) {
+        const statusGroup = filterGroups.find(g => g.slug === 'property_status')
+        if (statusGroup) {
+          const statusValue = filterValues['property_status']?.find(v => v.value === formData.status)
+          if (statusValue) {
+            filters[statusGroup.id.toString()] = [statusValue.id]
+          }
+        }
+      }
+      
+      // Add other selected filters
       filterGroups.forEach(group => {
         const selectedValues = formData.selectedFilters[group.slug] || []
         if (selectedValues.length > 0) {
