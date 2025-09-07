@@ -318,4 +318,34 @@ class PropertyRepository
             ['min' => $min + ($step * 4), 'max' => $max, 'label' => '$' . number_format($min + ($step * 4)) . ' - $' . number_format($max)],
         ];
     }
+
+    /**
+     * Get properties by user with filters - NEW METHOD.
+     */
+    public function getPropertiesByUserWithFilters(int $userId, array $filters = [], int $perPage = 15): LengthAwarePaginator
+    {
+        $query = Property::with(['creator', 'filterValues.filterGroup'])
+            ->where('created_by', $userId);
+
+        $query = $this->applyFilters($query, $filters);
+
+        return $query->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Search user's properties with filters - NEW METHOD.
+     */
+    public function searchUserProperties(int $userId, string $searchQuery, array $filters = [], int $perPage = 15): LengthAwarePaginator
+    {
+        $query = Property::with(['creator', 'filterValues.filterGroup'])
+            ->where('created_by', $userId)
+            ->search($searchQuery);
+
+        // Apply filters to search results
+        $query = $this->applyFilters($query, $filters);
+
+        return $query->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+    }
 }

@@ -142,10 +142,16 @@ class PropertyService {
     return response.data
   }
 
-  async getMyProperties(page = 1, perPage = 10) {
+  async getMyProperties(page = 1, perPage = 10, extraParams = {}) {
+    const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+        ...extraParams // Add all filter parameters
+    })
+
     const response = await axios.get(
-      `${API_BASE}/properties/my-properties?page=${page}&per_page=${perPage}`,
-      { headers: this.getAuthHeaders() }
+        `${API_BASE}/properties/my-properties?${params}`,
+        { headers: this.getAuthHeaders() }
     )
     return response.data
   }

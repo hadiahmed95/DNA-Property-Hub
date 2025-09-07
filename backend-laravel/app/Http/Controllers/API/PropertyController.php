@@ -205,10 +205,16 @@ class PropertyController extends Controller
      */
     public function myProperties(Request $request): AnonymousResourceCollection
     {
+        $filters = $this->buildFilters($request); // ADD THIS LINE
         $perPage = $request->get('per_page', 15);
-        $properties = $this->propertyRepository->getPropertiesByUser(auth()->id(), $perPage);
+        $properties = $this->propertyRepository->getPropertiesByUserWithFilters(auth()->id(), $filters, $perPage); // CHANGE THIS LINE
         
-        return PropertyResource::collection($properties);
+        return PropertyResource::collection($properties)->additional([
+            'meta' => [
+                'filters_applied' => $filters, // ADD THIS LINE
+                'total_properties' => $properties->total(),
+            ]
+        ]);
     }
 
     /**
