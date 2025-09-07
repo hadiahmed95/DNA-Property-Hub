@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\BlogCategoryController;
+use App\Http\Controllers\Api\Admin\BlogTagController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\Api\BlogCommentController;
+use App\Http\Controllers\Api\BlogController;
+use App\Http\Controllers\Api\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\RoleController;
 use App\Http\Controllers\API\PropertyController;
@@ -33,6 +38,20 @@ Route::prefix('v1')->group(function () {
         Route::get('filters/groups/{filterGroupId}/values', [FilterController::class, 'getFilterValues']);
         Route::get('filters/values-with-counts', [FilterController::class, 'getFilterValuesWithCounts']);
         Route::get('filters/search', [FilterController::class, 'searchFilterValues']);
+    });
+
+    // Public Blog API Routes
+    Route::prefix('blog')->group(function () {
+        Route::get('/', [BlogController::class, 'index']);
+        Route::get('/featured', [BlogController::class, 'featured']);
+        Route::get('/categories', [BlogController::class, 'categories']);
+        Route::get('/tags', [BlogController::class, 'tags']);
+        Route::get('/stats', [BlogController::class, 'stats']);
+        Route::get('/{slug}', [BlogController::class, 'show']);
+        
+        // Comments
+        Route::get('/{slug}/comments', [BlogCommentController::class, 'index']);
+        Route::post('/{slug}/comments', [BlogCommentController::class, 'store']);
     });
 
     // Protected routes - Auth required
@@ -77,6 +96,28 @@ Route::prefix('v1')->group(function () {
             
             // Usage statistics
             Route::get('usage-stats', [FilterController::class, 'getUsageStats']);
+        });
+        
+        Route::prefix('blogs')->group(function () {
+            // Blog Posts Management
+            Route::get('/', [AdminBlogController::class, 'index']);
+            Route::post('/', [AdminBlogController::class, 'store']);
+            Route::get('/stats', [AdminBlogController::class, 'stats']);
+            Route::post('/upload-image', [AdminBlogController::class, 'uploadImage']);
+            Route::delete('/bulk-delete', [AdminBlogController::class, 'bulkDelete']);
+
+            Route::get('/blog/{id}', [AdminBlogController::class, 'show']);
+            Route::post('/blog/{id}', [AdminBlogController::class, 'update']);
+            Route::delete('/blog/{id}', [AdminBlogController::class, 'destroy']);
+            Route::patch('/blog/{id}/status', [AdminBlogController::class, 'updateStatus']);
+            Route::patch('/blog/{id}/featured', [AdminBlogController::class, 'toggleFeatured']);
+            
+            // Categories Management
+            Route::apiResource('categories', BlogCategoryController::class);
+            
+            // Tags Management
+            Route::apiResource('tags', BlogTagController::class);
+            Route::delete('tags/bulk-delete', [BlogTagController::class, 'bulkDelete']);
         });
     });
 });

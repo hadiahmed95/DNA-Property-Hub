@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { 
   HomeIcon, 
   PropertiesIcon, 
@@ -19,6 +19,7 @@ import {
 import { MontserratFont, popinsFont } from '../fonts'
 import Input from '@/components/form/input'
 import Button from '@/components/button'
+import { match } from 'assert'
 
 interface PanelLayoutProps {
   children: React.ReactNode
@@ -59,6 +60,16 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
         { name: 'Roles & Permissions', href: '/dashboard/users/role-management' }
       ]
     },
+    { 
+      name: 'Blogs',
+      href: '/dashboard/blogs', 
+      icon: UserAdminIcon,
+      description: 'Blog Management',
+      subItems: [
+        { name: 'Blogs', href: '/dashboard/blogs', startMatch: '/dashboard/blogs,/dashboard/blogs/create,/dashboard/blogs/edit*' },
+        { name: 'Blog Categories', href: '/dashboard/blogs/categories', startMatch: '/dashboard/blogs/categories' }
+      ]
+    },
     // { 
     //   name: 'Clients', 
     //   href: '/dashboard/clients', 
@@ -79,10 +90,12 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
     },
   ]
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  const router = useRouter()
+
+  const isActive = (href: string) => pathname === href
 
   const isParentActive = (item: any) => {
-    return item.subItems?.some((subItem: any) => isActive(subItem.href)) || isActive(item.href)
+    return item.subItems?.some((subItem: any) => isActive(subItem.href)) || isActive(item.href) || pathname.startsWith(item.href)
   }
 
   const toggleExpanded = (itemName: string) => {
@@ -179,7 +192,7 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
                         toggleExpanded(item.name)
                       } else {
                         // Navigate to the main item if no sub-items
-                        window.location.href = item.href
+                        router.replace(item.href)
                       }
                     }}
                   >
@@ -227,8 +240,11 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
                       ${expanded ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0'}
                     `}>
                       <div className="ml-6 space-y-1">
-                        {item.subItems.map((subItem: any) => {
-                          const subActive = isActive(subItem.href)
+                        {item.subItems.map((subItem) => {
+                          // if('startMatch' in subItem) {
+                          //   console.log('subItem.startMatch', subItem.startMatch.split(',').some((path: string) => pathname.startsWith(path)));
+                          // }
+                          const subActive = ('startMatch' in subItem) ? subItem.startMatch.split(',').some((path: string) => pathname === path || (path.includes('*') && pathname.startsWith(path.replace('*', ''))) ) : isActive(subItem.href)
                           return (
                             <Link
                               key={subItem.name}
@@ -329,6 +345,7 @@ const PanelLayout = ({ children }: PanelLayoutProps) => {
                 <Button 
                   variant="primary"
                   icon={<PlusIcon className="w-5 h-5" />}
+                  onClick={() => router.push('/dashboard/properties/add')}
                 >
                   Add Property
                 </Button>

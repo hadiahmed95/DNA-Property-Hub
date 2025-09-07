@@ -23,5 +23,9 @@ class DatabaseSeeder extends Seeder
             'type' => 'admin',
             'status' => 'active'
         ]);
+
+        $this->call([
+            BlogSeeder::class,
+        ]);
     }
 }
