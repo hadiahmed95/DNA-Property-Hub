@@ -1,20 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Card from '@/components/card'
 import Button from '@/components/button'
 import Input from '@/components/form/input'
 import Select from '@/components/form/select'
-import { 
-  HomeIcon,
-  DollarIcon,
-  EditIcon,
-  PlusIcon,
-  TrashIcon,
-  EyeIcon,
-  ArrowUpIcon
-} from '@/components/icons'
+import propertyService from '@/services/property.service'
+import filterService from '@/services/filter.service'
 import { MontserratFont, popinsFont } from '../../../../fonts'
 
 interface PropertyFormData {
@@ -35,203 +28,151 @@ interface PropertyFormData {
   // Property Details
   bedrooms: string
   bathrooms: string
-  halfBathrooms: string
   squareFootage: string
-  lotSize: string
-  yearBuilt: string
-  floors: string
   
   // Pricing
   price: string
   priceType: string
-  hoa: string
-  propertyTax: string
-  
-  // Features & Amenities
-  features: string[]
-  amenities: string[]
-  appliances: string[]
   
   // Contact & Agent
   agentName: string
   agentEmail: string
   agentPhone: string
   
-  // Images & Media
-  images: File[]
-  virtualTour: string
-  
-  // Additional Details
-  parking: string
-  garage: string
-  heating: string
-  cooling: string
-  flooring: string[]
-  utilities: string[]
-  
-  // Marketing
-  featured: boolean
-  showAddress: boolean
-  allowShowings: boolean
-  openHouse: boolean
-  openHouseDate: string
-  openHouseTime: string
+  // Dynamic filters
+  selectedFilters: Record<string, string[]>
 }
 
 const AddPropertyPage = () => {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [filterGroups, setFilterGroups] = useState<any[]>([])
+  const [filterValues, setFilterValues] = useState<Record<string, any[]>>({})
+  const [loadingFilters, setLoadingFilters] = useState(true)
+  
   const [formData, setFormData] = useState<PropertyFormData>({
-    // Basic Information
     title: '',
     description: '',
     propertyType: '',
     status: '',
-    
-    // Location
     address: '',
     city: '',
     state: '',
     zipCode: '',
     country: 'United States',
     neighborhood: '',
-    
-    // Property Details
     bedrooms: '',
     bathrooms: '',
-    halfBathrooms: '',
     squareFootage: '',
-    lotSize: '',
-    yearBuilt: '',
-    floors: '',
-    
-    // Pricing
     price: '',
     priceType: 'sale',
-    hoa: '',
-    propertyTax: '',
-    
-    // Features & Amenities
-    features: [],
-    amenities: [],
-    appliances: [],
-    
-    // Contact & Agent
     agentName: '',
     agentEmail: '',
     agentPhone: '',
-    
-    // Images & Media
-    images: [],
-    virtualTour: '',
-    
-    // Additional Details
-    parking: '',
-    garage: '',
-    heating: '',
-    cooling: '',
-    flooring: [],
-    utilities: [],
-    
-    // Marketing
-    featured: false,
-    showAddress: true,
-    allowShowings: true,
-    openHouse: false,
-    openHouseDate: '',
-    openHouseTime: ''
+    selectedFilters: {}
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [dragActive, setDragActive] = useState(false)
 
   const steps = [
     { id: 1, title: 'Basic Info', description: 'Property details and description' },
     { id: 2, title: 'Location', description: 'Address and neighborhood' },
     { id: 3, title: 'Details', description: 'Specifications and features' },
-    { id: 4, title: 'Pricing', description: 'Price and financial details' },
-    { id: 5, title: 'Media', description: 'Photos and virtual tours' },
-    { id: 6, title: 'Review', description: 'Final review and publish' }
+    { id: 4, title: 'Pricing', description: 'Price and agent details' },
+    { id: 5, title: 'Review', description: 'Final review and publish' }
   ]
 
-  // Options for select fields
-  const propertyTypeOptions = [
-    { value: 'house', label: 'Single Family House' },
-    { value: 'apartment', label: 'Apartment' },
-    { value: 'condo', label: 'Condominium' },
-    { value: 'townhouse', label: 'Townhouse' },
-    { value: 'villa', label: 'Villa' },
-    { value: 'penthouse', label: 'Penthouse' },
-    { value: 'commercial', label: 'Commercial' },
-    { value: 'land', label: 'Land/Lot' }
-  ]
+  // Load filter options on component mount
+  useEffect(() => {
+    loadFilterOptions()
+  }, [])
 
-  const statusOptions = [
-    { value: 'for-sale', label: 'For Sale' },
-    { value: 'for-rent', label: 'For Rent' },
-    { value: 'sold', label: 'Sold' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'off-market', label: 'Off Market' }
-  ]
-
-  const stateOptions = [
-    { value: 'AL', label: 'Alabama' },
-    { value: 'AK', label: 'Alaska' },
-    { value: 'AZ', label: 'Arizona' },
-    { value: 'AR', label: 'Arkansas' },
-    { value: 'CA', label: 'California' },
-    { value: 'CO', label: 'Colorado' },
-    { value: 'CT', label: 'Connecticut' },
-    { value: 'DE', label: 'Delaware' },
-    { value: 'FL', label: 'Florida' },
-    { value: 'GA', label: 'Georgia' },
-    // Add more states as needed
-  ]
-
-  const bedroomOptions = [
-    { value: '0', label: 'Studio' },
-    { value: '1', label: '1 Bedroom' },
-    { value: '2', label: '2 Bedrooms' },
-    { value: '3', label: '3 Bedrooms' },
-    { value: '4', label: '4 Bedrooms' },
-    { value: '5', label: '5 Bedrooms' },
-    { value: '6+', label: '6+ Bedrooms' }
-  ]
-
-  const bathroomOptions = [
-    { value: '1', label: '1 Bathroom' },
-    { value: '1.5', label: '1.5 Bathrooms' },
-    { value: '2', label: '2 Bathrooms' },
-    { value: '2.5', label: '2.5 Bathrooms' },
-    { value: '3', label: '3 Bathrooms' },
-    { value: '3.5', label: '3.5 Bathrooms' },
-    { value: '4', label: '4 Bathrooms' },
-    { value: '4+', label: '4+ Bathrooms' }
-  ]
-
-  const featuresOptions = [
-    'Hardwood Floors', 'Granite Countertops', 'Stainless Steel Appliances', 
-    'Walk-in Closet', 'Fireplace', 'Balcony/Deck', 'Swimming Pool', 
-    'Gym/Fitness Center', 'Garage', 'Garden', 'Air Conditioning', 
-    'Central Heating', 'Security System', 'Pet Friendly'
-  ]
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
+  const loadFilterOptions = async () => {
+    setLoadingFilters(true)
+    try {
+      const response = await filterService.getAllFiltersForForm()
+      
+      if (response.success && response.data) {
+        setFilterGroups(response.data.groups || [])
+        setFilterValues(response.data.values || {})
+        
+        // Clear any previous errors
+        setErrors(prev => {
+          const newErrors = { ...prev }
+          delete newErrors.filters
+          return newErrors
+        })
+      } else {
+        console.error('❌ API response not successful:', response)
+        setErrors({ filters: response.error || 'Failed to load filter options' })
+      }
+    } catch (error) {
+      console.error('💥 Exception in loadFilterOptions:', error)
+      setErrors({ filters: 'Failed to load filter options due to network error' })
+    } finally {
+      setLoadingFilters(false)
     }
   }
 
-  const handleArrayToggle = (field: string, value: string) => {
+  // Get property type options from loaded filters (NO STATIC VALUES)
+  const getPropertyTypeOptions = () => {
+    const propertyTypeGroup = filterGroups.find(group => group.slug === 'property_type')
+    if (!propertyTypeGroup) return []
+    
+    const values = filterValues[propertyTypeGroup.slug] || []
+    return values.map(value => ({
+      value: value.value,
+      label: value.label
+    }))
+  }
+
+  // Get status options from loaded filters (NO STATIC VALUES)
+  const getStatusOptions = () => {
+    const statusGroup = filterGroups.find(group => group.slug === 'property_status')
+    if (!statusGroup) return []
+    
+    const values = filterValues[statusGroup.slug] || []
+    return values.map(value => ({
+      value: value.value,
+      label: value.label
+    }))
+  }
+
+  const handleInputChange = (field: keyof PropertyFormData, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [field]: (prev[field as keyof PropertyFormData] as string[]).includes(value)
-        ? (prev[field as keyof PropertyFormData] as string[]).filter(item => item !== value)
-        : [...(prev[field as keyof PropertyFormData] as string[]), value]
+      [field]: value
     }))
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }))
+    }
+  }
+
+  const handleFilterChange = (groupSlug: string, valueId: string, checked: boolean) => {
+    setFormData(prev => {
+      const currentValues = prev.selectedFilters[groupSlug] || []
+      let newValues: string[]
+      
+      if (checked) {
+        newValues = [...currentValues, valueId]
+      } else {
+        newValues = currentValues.filter(id => id !== valueId)
+      }
+      
+      return {
+        ...prev,
+        selectedFilters: {
+          ...prev.selectedFilters,
+          [groupSlug]: newValues
+        }
+      }
+    })
   }
 
   const validateStep = (step: number): boolean => {
@@ -250,14 +191,12 @@ const AddPropertyPage = () => {
         if (!formData.state) newErrors.state = 'State is required'
         if (!formData.zipCode.trim()) newErrors.zipCode = 'ZIP code is required'
         break
-      case 3:
-        if (!formData.bedrooms) newErrors.bedrooms = 'Number of bedrooms is required'
-        if (!formData.bathrooms) newErrors.bathrooms = 'Number of bathrooms is required'
-        if (!formData.squareFootage.trim()) newErrors.squareFootage = 'Square footage is required'
-        break
       case 4:
         if (!formData.price.trim()) newErrors.price = 'Price is required'
         if (isNaN(Number(formData.price.replace(/[^0-9]/g, '')))) newErrors.price = 'Please enter a valid price'
+        if (!formData.agentName.trim()) newErrors.agentName = 'Agent name is required'
+        if (!formData.agentEmail.trim()) newErrors.agentEmail = 'Agent email is required'
+        if (!formData.agentPhone.trim()) newErrors.agentPhone = 'Agent phone is required'
         break
     }
 
@@ -275,59 +214,86 @@ const AddPropertyPage = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1))
   }
 
-  const handleImageUpload = (files: FileList | null) => {
-    if (files) {
-      const newImages = Array.from(files).slice(0, 10 - formData.images.length)
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...newImages]
-      }))
-    }
-  }
-
-  const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }))
-  }
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setDragActive(false)
-    }
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-    handleImageUpload(e.dataTransfer.files)
-  }
-
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return
 
     setLoading(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      console.log('Property data:', formData)
-      router.push('/dashboard/properties')
+      // Convert formData to API format
+      const filters: Record<string, number[]> = {}
+      
+      filterGroups.forEach(group => {
+        const selectedValues = formData.selectedFilters[group.slug] || []
+        if (selectedValues.length > 0) {
+          filters[group.id.toString()] = selectedValues.map(id => parseInt(id))
+        }
+      })
+
+      const submitData = {
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price.replace(/[^0-9.]/g, '')),
+        price_type: formData.priceType as 'sale' | 'rent_monthly' | 'rent_weekly',
+        bedrooms: parseInt(formData.bedrooms) || 0,
+        bathrooms: parseFloat(formData.bathrooms) || 0,
+        square_footage: parseInt(formData.squareFootage) || 0,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip_code: formData.zipCode,
+        agent_info: {
+          name: formData.agentName,
+          email: formData.agentEmail,
+          phone: formData.agentPhone
+        },
+        filters
+      }
+
+      const response = await propertyService.createProperty(submitData)
+      
+      if (response.success) {
+        router.push('/dashboard/properties')
+      } else {
+        setErrors({ submit: response.error || 'Failed to create property' })
+      }
     } catch (error) {
-      console.error('Error saving property:', error)
+      console.error('Error creating property:', error)
+      setErrors({ submit: 'An unexpected error occurred' })
     } finally {
       setLoading(false)
     }
   }
 
+  // Show loading while filters are loading
+  if (loadingFilters) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading filter options...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error if filters failed to load
+  if (errors.filters) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{errors.filters}</p>
+          <Button onClick={loadFilterOptions}>Retry</Button>
+        </div>
+      </div>
+    )
+  }
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
+        const propertyTypeOptions = getPropertyTypeOptions()
+        const statusOptions = getStatusOptions()
+        
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -338,24 +304,37 @@ const AddPropertyPage = () => {
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 error={errors.title}
               />
-              <Select
-                label="Property Type *"
-                options={propertyTypeOptions}
-                value={formData.propertyType}
-                onChange={(e) => handleInputChange('propertyType', e.target.value)}
-                placeholder="Select property type"
-                error={errors.propertyType}
-              />
+              
+              {propertyTypeOptions.length > 0 ? (
+                <Select
+                  label="Property Type *"
+                  options={[{ value: '', label: 'Select property type' }, ...propertyTypeOptions]}
+                  value={formData.propertyType}
+                  onChange={(e) => handleInputChange('propertyType', e.target.value)}
+                  error={errors.propertyType}
+                />
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+                  <div className="text-gray-500 text-sm">Loading property types...</div>
+                </div>
+              )}
             </div>
 
-            <Select
-              label="Status *"
-              options={statusOptions}
-              value={formData.status}
-              onChange={(e) => handleInputChange('status', e.target.value)}
-              placeholder="Select status"
-              error={errors.status}
-            />
+            {statusOptions.length > 0 ? (
+              <Select
+                label="Status *"
+                options={[{ value: '', label: 'Select status' }, ...statusOptions]}
+                value={formData.status}
+                onChange={(e) => handleInputChange('status', e.target.value)}
+                error={errors.status}
+              />
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                <div className="text-gray-500 text-sm">Loading status options...</div>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -368,12 +347,12 @@ const AddPropertyPage = () => {
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 className={`w-full px-4 py-3 border rounded-xl transition-all duration-200 resize-none ${
                   errors.description 
-                    ? 'border-red-300 focus:ring-2 focus:ring-red-200 focus:border-red-500' 
-                    : 'border-gray-300 focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)]'
-                }`}
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : 'border-gray-300 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
+                } focus:ring-2 focus:outline-none`}
               />
               {errors.description && (
-                <p className="text-sm text-red-600 mt-1">{errors.description}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.description}</p>
               )}
             </div>
           </div>
@@ -384,48 +363,42 @@ const AddPropertyPage = () => {
           <div className="space-y-6">
             <Input
               label="Street Address *"
-              placeholder="123 Main Street"
+              placeholder="123 Ocean Drive"
               value={formData.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
               error={errors.address}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
                 label="City *"
-                placeholder="New York"
+                placeholder="Miami"
                 value={formData.city}
                 onChange={(e) => handleInputChange('city', e.target.value)}
                 error={errors.city}
               />
-              <Select
+              <Input
                 label="State *"
-                options={stateOptions}
+                placeholder="FL"
                 value={formData.state}
                 onChange={(e) => handleInputChange('state', e.target.value)}
-                placeholder="Select state"
                 error={errors.state}
-              />
-              <Input
-                label="ZIP Code *"
-                placeholder="10001"
-                value={formData.zipCode}
-                onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                error={errors.zipCode}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
-                label="Neighborhood"
-                placeholder="e.g., Downtown, Midtown"
-                value={formData.neighborhood}
-                onChange={(e) => handleInputChange('neighborhood', e.target.value)}
+                label="ZIP Code *"
+                placeholder="33139"
+                value={formData.zipCode}
+                onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                error={errors.zipCode}
               />
               <Input
-                label="Country"
-                value={formData.country}
-                onChange={(e) => handleInputChange('country', e.target.value)}
+                label="Neighborhood"
+                placeholder="South Beach"
+                value={formData.neighborhood}
+                onChange={(e) => handleInputChange('neighborhood', e.target.value)}
               />
             </div>
           </div>
@@ -435,103 +408,73 @@ const AddPropertyPage = () => {
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Select
-                label="Bedrooms *"
-                options={bedroomOptions}
+              <Input
+                label="Bedrooms"
+                type="number"
+                placeholder="4"
                 value={formData.bedrooms}
                 onChange={(e) => handleInputChange('bedrooms', e.target.value)}
-                placeholder="Select bedrooms"
-                error={errors.bedrooms}
               />
-              <Select
-                label="Bathrooms *"
-                options={bathroomOptions}
+              <Input
+                label="Bathrooms"
+                type="number"
+                step="0.5"
+                placeholder="3.5"
                 value={formData.bathrooms}
                 onChange={(e) => handleInputChange('bathrooms', e.target.value)}
-                placeholder="Select bathrooms"
-                error={errors.bathrooms}
               />
               <Input
-                label="Half Baths"
+                label="Square Footage"
                 type="number"
-                placeholder="0"
-                value={formData.halfBathrooms}
-                onChange={(e) => handleInputChange('halfBathrooms', e.target.value)}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                label="Square Footage *"
-                placeholder="2,500"
+                placeholder="2500"
                 value={formData.squareFootage}
                 onChange={(e) => handleInputChange('squareFootage', e.target.value)}
-                error={errors.squareFootage}
-              />
-              <Input
-                label="Lot Size (sq ft)"
-                placeholder="5,000"
-                value={formData.lotSize}
-                onChange={(e) => handleInputChange('lotSize', e.target.value)}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                label="Year Built"
-                type="number"
-                placeholder="2020"
-                value={formData.yearBuilt}
-                onChange={(e) => handleInputChange('yearBuilt', e.target.value)}
-              />
-              <Input
-                label="Number of Floors"
-                type="number"
-                placeholder="2"
-                value={formData.floors}
-                onChange={(e) => handleInputChange('floors', e.target.value)}
-              />
-            </div>
-
-            {/* Features Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">
-                Property Features
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {featuresOptions.map((feature) => (
-                  <label
-                    key={feature}
-                    className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    <div className="relative">
+            {/* ONLY Dynamic Filters from API - NO static values */}
+            {filterGroups
+              .filter(group => !['property_type', 'property_status'].includes(group.slug)) // Exclude already used groups
+              .map((group) => (
+              <div key={group.id} className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  {group.name}
+                  {group.is_required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {filterValues[group.slug]?.map((value: any) => (
+                    <label
+                      key={value.id}
+                      className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                    >
                       <input
-                        type="checkbox"
-                        checked={formData.features.includes(feature)}
-                        onChange={() => handleArrayToggle('features', feature)}
-                        className="sr-only"
+                        type={group.is_multiple ? "checkbox" : "radio"}
+                        name={group.slug}
+                        checked={formData.selectedFilters[group.slug]?.includes(value.id.toString()) || false}
+                        onChange={(e) => {
+                          if (group.is_multiple) {
+                            handleFilterChange(group.slug, value.id.toString(), e.target.checked)
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              selectedFilters: {
+                                ...prev.selectedFilters,
+                                [group.slug]: e.target.checked ? [value.id.toString()] : []
+                              }
+                            }))
+                          }
+                        }}
+                        className="rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                       />
-                      <div
-                        className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center ${
-                          formData.features.includes(feature)
-                            ? 'bg-[var(--primary)] border-[var(--primary)] text-white'
-                            : 'border-gray-300 hover:border-[var(--primary)]'
-                        }`}
-                      >
-                        {formData.features.includes(feature) && (
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                    <span className={`text-sm text-gray-700 ${popinsFont['500'].className}`}>
-                      {feature}
-                    </span>
-                  </label>
-                ))}
+                      <span className="text-sm text-gray-700 font-medium">
+                        {value.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         )
 
@@ -550,48 +493,38 @@ const AddPropertyPage = () => {
                 label="Price Type"
                 options={[
                   { value: 'sale', label: 'For Sale' },
-                  { value: 'rent-monthly', label: 'Monthly Rent' },
-                  { value: 'rent-weekly', label: 'Weekly Rent' }
+                  { value: 'rent_monthly', label: 'Monthly Rent' },
+                  { value: 'rent_weekly', label: 'Weekly Rent' }
                 ]}
                 value={formData.priceType}
                 onChange={(e) => handleInputChange('priceType', e.target.value)}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                label="HOA Fees (Monthly)"
-                placeholder="250"
-                value={formData.hoa}
-                onChange={(e) => handleInputChange('hoa', e.target.value)}
-              />
-              <Input
-                label="Property Tax (Annual)"
-                placeholder="8,500"
-                value={formData.propertyTax}
-                onChange={(e) => handleInputChange('propertyTax', e.target.value)}
-              />
-            </div>
-
+            <h3 className="text-lg font-semibold text-gray-900 mt-8 mb-4">Agent Information</h3>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Input
-                label="Agent Name"
+                label="Agent Name *"
                 placeholder="John Smith"
                 value={formData.agentName}
                 onChange={(e) => handleInputChange('agentName', e.target.value)}
+                error={errors.agentName}
               />
               <Input
-                label="Agent Email"
+                label="Agent Email *"
                 type="email"
-                placeholder="john@example.com"
+                placeholder="john@agent.com"
                 value={formData.agentEmail}
                 onChange={(e) => handleInputChange('agentEmail', e.target.value)}
+                error={errors.agentEmail}
               />
               <Input
-                label="Agent Phone"
-                placeholder="(555) 123-4567"
+                label="Agent Phone *"
+                placeholder="+1-305-555-0123"
                 value={formData.agentPhone}
                 onChange={(e) => handleInputChange('agentPhone', e.target.value)}
+                error={errors.agentPhone}
               />
             </div>
           </div>
@@ -600,356 +533,33 @@ const AddPropertyPage = () => {
       case 5:
         return (
           <div className="space-y-6">
-            {/* Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">
-                Property Images (Max 10)
-              </label>
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Summary</h3>
               
-              <div
-                className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 ${
-                  dragActive 
-                    ? 'border-[var(--primary)] bg-[var(--primary)]/5' 
-                    : 'border-gray-300 hover:border-[var(--primary)]/50'
-                }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e.target.files)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <div className="space-y-4">
-                  <div className="w-16 h-16 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)] text-2xl mx-auto">
-                    📷
-                  </div>
-                  <div>
-                    <p className={`text-lg font-semibold text-gray-900 ${MontserratFont.className}`}>
-                      Drop images here or click to upload
-                    </p>
-                    <p className={`text-gray-600 ${popinsFont['400'].className}`}>
-                      PNG, JPG, GIF up to 10MB each
-                    </p>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700">Title:</span>
+                  <span className="ml-2 text-gray-900">{formData.title}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Price:</span>
+                  <span className="ml-2 text-gray-900">${parseFloat(formData.price.replace(/[^0-9.]/g, '') || '0').toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Address:</span>
+                  <span className="ml-2 text-gray-900">{formData.address}, {formData.city}, {formData.state}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Agent:</span>
+                  <span className="ml-2 text-gray-900">{formData.agentName}</span>
                 </div>
               </div>
-
-              {/* Image Preview */}
-              {formData.images.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  {formData.images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden">
-                        <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-amber-500 flex items-center justify-center text-white text-2xl">
-                          🏠
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                      {index === 0 && (
-                        <div className="absolute top-2 left-2 bg-[var(--primary)] text-white text-xs px-2 py-1 rounded-full">
-                          Main
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            <Input
-              label="Virtual Tour URL"
-              placeholder="https://..."
-              value={formData.virtualTour}
-              onChange={(e) => handleInputChange('virtualTour', e.target.value)}
-            />
-
-            {/* Marketing Options */}
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">
-                Marketing Options
-              </label>
-              
-              <div className="space-y-3">
-                {[
-                  { key: 'featured', label: 'Mark as Featured Property', description: 'Highlight this property in listings' },
-                  { key: 'showAddress', label: 'Show Full Address', description: 'Display complete address publicly' },
-                  { key: 'allowShowings', label: 'Allow Showings', description: 'Enable appointment scheduling' },
-                  { key: 'openHouse', label: 'Schedule Open House', description: 'Set open house dates and times' }
-                ].map((option) => (
-                  <label key={option.key} className="flex items-start space-x-3 cursor-pointer p-4 rounded-xl hover:bg-gray-50 transition-colors duration-200">
-                    <div className="relative mt-1">
-                      <input
-                        type="checkbox"
-                        checked={formData[option.key as keyof PropertyFormData] as boolean}
-                        onChange={(e) => handleInputChange(option.key, e.target.checked)}
-                        className="sr-only"
-                      />
-                      <div
-                        className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center ${
-                          formData[option.key as keyof PropertyFormData]
-                            ? 'bg-[var(--primary)] border-[var(--primary)] text-white'
-                            : 'border-gray-300 hover:border-[var(--primary)]'
-                        }`}
-                      >
-                        {formData[option.key as keyof PropertyFormData] && (
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <div className={`font-medium text-gray-900 ${popinsFont['500'].className}`}>
-                        {option.label}
-                      </div>
-                      <div className={`text-sm text-gray-600 ${popinsFont['400'].className}`}>
-                        {option.description}
-                      </div>
-                    </div>
-                  </label>
-                ))}
+            {errors.submit && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-600 text-sm">{errors.submit}</p>
               </div>
-
-              {formData.openHouse && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                  <Input
-                    label="Open House Date"
-                    type="date"
-                    value={formData.openHouseDate}
-                    onChange={(e) => handleInputChange('openHouseDate', e.target.value)}
-                  />
-                  <Input
-                    label="Open House Time"
-                    type="time"
-                    value={formData.openHouseTime}
-                    onChange={(e) => handleInputChange('openHouseTime', e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        )
-
-      case 6:
-        return (
-          <div className="space-y-8">
-            {/* Property Summary */}
-            <Card variant="gradient">
-              <div className="flex items-start space-x-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-[var(--primary)] to-amber-500 rounded-2xl flex items-center justify-center text-white text-3xl flex-shrink-0">
-                  🏠
-                </div>
-                <div className="flex-1">
-                  <h3 className={`text-2xl font-bold text-gray-900 mb-2 ${MontserratFont.className}`}>
-                    {formData.title || 'Property Title'}
-                  </h3>
-                  <p className={`text-gray-600 mb-4 ${popinsFont['400'].className}`}>
-                    {formData.description || 'No description provided'}
-                  </p>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                    <span className="flex items-center">
-                      🏠 {propertyTypeOptions.find(t => t.value === formData.propertyType)?.label}
-                    </span>
-                    <span className="flex items-center">
-                      📍 {formData.city}, {formData.state}
-                    </span>
-                    <span className="flex items-center">
-                      🛏️ {formData.bedrooms} beds
-                    </span>
-                    <span className="flex items-center">
-                      🚿 {formData.bathrooms} baths
-                    </span>
-                    <span className="flex items-center">
-                      📐 {formData.squareFootage} sq ft
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className={`text-3xl font-bold text-[var(--primary)] ${MontserratFont.className}`}>
-                    ${formData.price || '0'}
-                  </div>
-                  <div className={`text-sm text-gray-600 ${popinsFont['400'].className}`}>
-                    {statusOptions.find(s => s.value === formData.status)?.label}
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Review Sections */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <h4 className={`text-lg font-bold text-gray-900 mb-4 ${MontserratFont.className}`}>
-                  Location Details
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Address:</span>
-                    <span className="font-medium">{formData.address}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">City, State:</span>
-                    <span className="font-medium">{formData.city}, {formData.state}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">ZIP Code:</span>
-                    <span className="font-medium">{formData.zipCode}</span>
-                  </div>
-                  {formData.neighborhood && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Neighborhood:</span>
-                      <span className="font-medium">{formData.neighborhood}</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <Card>
-                <h4 className={`text-lg font-bold text-gray-900 mb-4 ${MontserratFont.className}`}>
-                  Property Features
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Year Built:</span>
-                    <span className="font-medium">{formData.yearBuilt || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Lot Size:</span>
-                    <span className="font-medium">{formData.lotSize || 'N/A'} sq ft</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Floors:</span>
-                    <span className="font-medium">{formData.floors || 'N/A'}</span>
-                  </div>
-                  {formData.features.length > 0 && (
-                    <div className="mt-3">
-                      <span className="text-gray-600 block mb-2">Selected Features:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {formData.features.slice(0, 3).map((feature, index) => (
-                          <span key={index} className="px-2 py-1 bg-[var(--primary)]/10 text-[var(--primary)] text-xs rounded-full">
-                            {feature}
-                          </span>
-                        ))}
-                        {formData.features.length > 3 && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                            +{formData.features.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <Card>
-                <h4 className={`text-lg font-bold text-gray-900 mb-4 ${MontserratFont.className}`}>
-                  Financial Details
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Price Type:</span>
-                    <span className="font-medium capitalize">{formData.priceType.replace('-', ' ')}</span>
-                  </div>
-                  {formData.hoa && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">HOA Fees:</span>
-                      <span className="font-medium">${formData.hoa}/month</span>
-                    </div>
-                  )}
-                  {formData.propertyTax && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Property Tax:</span>
-                      <span className="font-medium">${formData.propertyTax}/year</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <Card>
-                <h4 className={`text-lg font-bold text-gray-900 mb-4 ${MontserratFont.className}`}>
-                  Marketing Settings
-                </h4>
-                <div className="space-y-3">
-                  {[
-                    { key: 'featured', label: 'Featured Property' },
-                    { key: 'showAddress', label: 'Show Full Address' },
-                    { key: 'allowShowings', label: 'Allow Showings' },
-                    { key: 'openHouse', label: 'Open House Scheduled' }
-                  ].map((setting) => (
-                    <div key={setting.key} className="flex items-center justify-between">
-                      <span className="text-gray-600 text-sm">{setting.label}:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        formData[setting.key as keyof PropertyFormData]
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {formData[setting.key as keyof PropertyFormData] ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            {/* Images Summary */}
-            {formData.images.length > 0 && (
-              <Card>
-                <h4 className={`text-lg font-bold text-gray-900 mb-4 ${MontserratFont.className}`}>
-                  Uploaded Images ({formData.images.length})
-                </h4>
-                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                  {formData.images.slice(0, 8).map((_, index) => (
-                    <div key={index} className="aspect-square bg-gradient-to-br from-[var(--primary)] to-amber-500 rounded-lg flex items-center justify-center text-white text-xl">
-                      🏠
-                    </div>
-                  ))}
-                  {formData.images.length > 8 && (
-                    <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 text-sm font-medium">
-                      +{formData.images.length - 8}
-                    </div>
-                  )}
-                </div>
-              </Card>
-            )}
-
-            {/* Agent Information */}
-            {(formData.agentName || formData.agentEmail || formData.agentPhone) && (
-              <Card>
-                <h4 className={`text-lg font-bold text-gray-900 mb-4 ${MontserratFont.className}`}>
-                  Agent Information
-                </h4>
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-[var(--primary)] rounded-xl flex items-center justify-center text-white font-bold">
-                    {formData.agentName.charAt(0) || 'A'}
-                  </div>
-                  <div>
-                    {formData.agentName && (
-                      <div className={`font-semibold text-gray-900 ${popinsFont['600'].className}`}>
-                        {formData.agentName}
-                      </div>
-                    )}
-                    {formData.agentEmail && (
-                      <div className={`text-sm text-gray-600 ${popinsFont['400'].className}`}>
-                        {formData.agentEmail}
-                      </div>
-                    )}
-                    {formData.agentPhone && (
-                      <div className={`text-sm text-gray-600 ${popinsFont['400'].className}`}>
-                        {formData.agentPhone}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
             )}
           </div>
         )
@@ -960,50 +570,29 @@ const AddPropertyPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="relative bg-gradient-to-r from-[var(--primary)] via-amber-500 to-orange-500 rounded-3xl mx-6 mt-6 mb-8 p-8 lg:p-12 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-8 right-8 w-32 h-32 border-2 border-white rounded-full animate-pulse"></div>
-          <div className="absolute bottom-8 left-8 w-24 h-24 border-2 border-white rounded-lg rotate-45"></div>
-        </div>
-        
-        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between">
-          <div className="text-white mb-6 lg:mb-0">
-            <h1 className={`text-4xl lg:text-5xl font-bold mb-4 ${MontserratFont.className}`}>
-              Add New Property
-            </h1>
-            <p className={`text-xl text-white/90 mb-6 ${popinsFont['400'].className} max-w-2xl`}>
-              Create a comprehensive property listing with detailed information, images, and features to attract potential buyers or renters.
-            </p>
-            <div className="flex items-center space-x-6 text-white/90">
-              <div className="flex items-center space-x-2">
-                <HomeIcon className="w-5 h-5" />
-                <span className={`${popinsFont['500'].className}`}>Step {currentStep} of {steps.length}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <EditIcon className="w-5 h-5" />
-                <span className={`${popinsFont['500'].className}`}>{steps[currentStep - 1]?.title}</span>
-              </div>
-            </div>
-          </div>
-          <div className="text-white">
-            <div className="w-32 h-32 bg-white/10 backdrop-blur-sm rounded-3xl p-6 flex items-center justify-center border border-white/20">
-              <div className="text-5xl">🏠</div>
-            </div>
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <h1 className={`text-2xl font-bold text-gray-900 ${MontserratFont.className}`}>
+            Add New Property
+          </h1>
+          <div className="text-sm text-gray-500">
+            Step {currentStep} of {steps.length}
           </div>
         </div>
       </div>
 
       {/* Progress Steps */}
-      <div className="mx-6 mb-8">
-        <Card>
+      <div className="bg-white border-b border-gray-200 px-6 py-6">
+        <Card className="p-6">
           <div className="flex items-center justify-between">
-            {steps.map((step) => (
+            {steps.map((step, index) => (
               <div
                 key={step.id}
-                className={`flex items-center ${step.id < steps.length ? 'flex-1' : ''}`}
+                className={`flex items-center ${
+                  index < steps.length - 1 ? 'flex-1' : ''
+                }`}
               >
                 <div className="flex flex-col items-center">
                   <div
@@ -1051,16 +640,16 @@ const AddPropertyPage = () => {
       {/* Navigation */}
       <div className="mx-6 mb-8">
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-6">
             <Button
               variant="ghost"
               onClick={prevStep}
               disabled={currentStep === 1}
               className="flex items-center"
-              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-              </svg>}
             >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
               Previous
             </Button>
 
@@ -1069,59 +658,44 @@ const AddPropertyPage = () => {
                 variant="secondary"
                 onClick={() => router.push('/dashboard/properties')}
               >
-                Save as Draft
+                Cancel
               </Button>
               
               {currentStep < steps.length ? (
                 <Button
-                  variant="primary"
                   onClick={nextStep}
+                  disabled={loading}
                   className="flex items-center"
-                  icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                  </svg>}
                 >
                   Next
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                  </svg>
                 </Button>
               ) : (
                 <Button
-                  variant="primary"
                   onClick={handleSubmit}
-                  loading={loading}
+                  disabled={loading}
                   className="flex items-center"
-                  icon={<PlusIcon className="w-4 h-4" />}
                 >
-                  Publish Property
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      Publish Property
+                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </>
+                  )}
                 </Button>
               )}
             </div>
           </div>
         </Card>
-      </div>
-
-      {/* Floating Save Button for Mobile */}
-      <div className="fixed bottom-6 right-6 sm:hidden z-50">
-        <Button
-          variant="primary"
-          size="lg"
-          className="w-14 h-14 rounded-full shadow-2xl"
-          onClick={() => {
-            if (currentStep < steps.length) {
-              nextStep()
-            } else {
-              handleSubmit()
-            }
-          }}
-          loading={loading}
-        >
-          {currentStep < steps.length ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-            </svg>
-          ) : (
-            <PlusIcon className="w-6 h-6" />
-          )}
-        </Button>
       </div>
     </div>
   )
