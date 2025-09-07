@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { API_BASE_URL } from './api'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api/v1'
+const API_BASE = API_BASE_URL
 
 class PropertyService {
   private getAuthHeaders() {
@@ -35,7 +36,7 @@ class PropertyService {
       const headers = this.getAuthHeaders()
       const response = await axios.get(`${API_BASE}/user`, { headers })
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Auth test failed:', error.response?.data || error.message)
       throw error
     }
@@ -55,8 +56,8 @@ class PropertyService {
       )
       
       return response.data
-      
-    } catch (error) {
+
+    } catch (error: any) {
       console.error('❌ Create property failed:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
@@ -96,7 +97,7 @@ class PropertyService {
         if (Array.isArray(value)) {
           params.append(key, value.join(','))
         } else {
-          params.append(key, value.toString())
+          params.append(key, (value ?? '').toString())
         }
       }
     })
@@ -114,7 +115,7 @@ class PropertyService {
     const params = new URLSearchParams({ q: query })
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '') {
-        params.append(key, value.toString())
+        params.append(key, (value ?? '').toString())
       }
     })
 

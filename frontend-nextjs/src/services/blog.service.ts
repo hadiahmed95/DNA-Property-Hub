@@ -1,5 +1,4 @@
 import api from './api'
-import { BlogPost, CategoryFormData } from '@/types/blog.categories'
 
 class BlogService {
 

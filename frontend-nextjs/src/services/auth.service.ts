@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1`;
-
+import { API_BASE_URL } from './api';
 export interface LoginCredentials {
     email: string;
     password: string;
@@ -15,7 +13,7 @@ export interface AuthResponse {
 
 class AuthService {
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
-        const response = await axios.post(`${API_URL}/auth/login`, credentials);
+        const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials);
         if (response.data.access_token) {
             localStorage.setItem('token', response.data.access_token);
             localStorage.setItem('user', JSON.stringify(response.data.user));

@@ -1,6 +1,5 @@
 import axios from 'axios'
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api/v1'
+import { API_BASE_URL } from './api'
 
 interface FilterGroup {
   id: number
@@ -23,7 +22,7 @@ interface FilterValue {
 class FilterService {
   async getFilterGroups(page = 'properties') {
     try {
-      const response = await axios.get(`${API_BASE}/public/filters/groups?page=${page}`)
+      const response = await axios.get(`${API_BASE_URL}/public/filters/groups?page=${page}`)
       return response.data
     } catch (error) {
       console.error('❌ Filter groups error:', error)
@@ -33,7 +32,7 @@ class FilterService {
 
   async getFilterValuesByGroup(groupId: number) {
     try {
-      const response = await axios.get(`${API_BASE}/public/filters/groups/${groupId}/values`)
+      const response = await axios.get(`${API_BASE_URL}/public/filters/groups/${groupId}/values`)
       return response.data
     } catch (error) {
       console.error('❌ Filter values error:', error)
