@@ -109,8 +109,8 @@ const PropertiesPage = () => {
   const loadFilterOptions = async () => {
     setLoadingFilters(true)
     try {
-      const response = await filterService.getAllFiltersForForm()
-      if (response.success && response.data) {
+      const response: any = await filterService.getAllFiltersForForm()
+      if (response && response.success && response.data) {
         setFilterGroups(response.data.groups || [])
         setFilterValues(response.data.values || {})
       }

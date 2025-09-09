@@ -60,12 +60,12 @@ const settingsService = {
     }
   }),
   
-  updateSettings: async (section, data) => {
+  updateSettings: async (section: any, data: any) => {
     console.log('Updating settings:', section, data)
     return { success: true }
   },
   
-  changePassword: async (data) => {
+  changePassword: async (data: any) => {
     console.log('Changing password:', data)
     return { success: true }
   }
@@ -73,12 +73,12 @@ const settingsService = {
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('profile')
-  const [settings, setSettings] = useState(null)
+  const [settings, setSettings] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [avatarPreview, setAvatarPreview] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState<any>(null)
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -100,8 +100,8 @@ const SettingsPage = () => {
     }
   }
 
-  const handleSettingChange = (section, key, value) => {
-    setSettings(prev => ({
+  const handleSettingChange = (section: any, key: any, value: any) => {
+    setSettings((prev: any) => ({
       ...prev,
       [section]: {
         ...prev[section],
@@ -110,7 +110,7 @@ const SettingsPage = () => {
     }))
   }
 
-  const handleSaveSettings = async (section) => {
+  const handleSaveSettings = async (section: any) => {
     setSaving(true)
     try {
       await settingsService.updateSettings(section, settings[section])
@@ -142,13 +142,15 @@ const SettingsPage = () => {
     }
   }
 
-  const handleAvatarUpload = (event) => {
+  const handleAvatarUpload = (event: any) => {
     const file = event.target.files[0]
     if (file) {
       const reader = new FileReader()
       reader.onload = (e) => {
-        setAvatarPreview(e.target.result)
-        handleSettingChange('profile', 'avatar', file)
+        if(e.target?.result) {
+          setAvatarPreview(e.target.result)
+          handleSettingChange('profile', 'avatar', file)
+        }
       }
       reader.readAsDataURL(file)
     }
@@ -248,7 +250,7 @@ const SettingsPage = () => {
                       {avatarPreview ? (
                         <img src={avatarPreview} alt="Avatar" className="w-24 h-24 rounded-full object-cover" />
                       ) : (
-                        settings?.profile?.name?.split(' ').map(n => n[0]).join('') || 'JD'
+                        settings?.profile?.name?.split(' ').map((n: any) => n[0]).join('') || 'JD'
                       )}
                     </div>
                     <label className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
