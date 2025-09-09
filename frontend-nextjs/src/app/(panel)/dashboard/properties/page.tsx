@@ -154,7 +154,6 @@ const PropertiesPage = () => {
 
       // Call the API with filters
       const response = await propertyService.getMyProperties(currentPage, itemsPerPage, filterParams)
-      console.log('📋 API Response:', response)
       
       if (response && response.data) {
         setProperties(response.data)  // ONLY this line needed
@@ -357,44 +356,57 @@ const PropertiesPage = () => {
     </Card>
   )
 
-  if (loadingFilters) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)]"></div>
-        <span className="ml-3">Loading filters...</span>
-      </div>
-    )
-  }
+  // if (loadingFilters) {
+  //   return (
+  //     <div className="flex items-center justify-center py-12">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)]"></div>
+  //       <span className="ml-3">Loading filters...</span>
+  //     </div>
+  //   )
+  // }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className={`text-3xl font-bold text-gray-900 ${MontserratFont.className}`}>
-            Properties
-          </h1>
-          <p className={`text-gray-600 mt-1 ${popinsFont['400'].className}`}>
-            Manage your property listings ({totalProperties} total)
-          </p>
+      <div className="relative bg-gradient-to-r from-[var(--primary)] via-amber-500 to-orange-500 rounded-3xl mx-6 mt-6 mb-8 p-8 lg:p-12 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-8 right-8 w-32 h-32 border-2 border-white rounded-full animate-pulse"></div>
+          <div className="absolute bottom-8 left-8 w-24 h-24 border-2 border-white rounded-lg rotate-45"></div>
         </div>
-        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            {showFilters ? 'Hide' : 'Show'} Filters
-          </Button>
-          <Button href="/dashboard/properties/add">
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Add Property
-          </Button>
+        
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between">
+          <div className="text-white mb-6 lg:mb-0">
+            <h1 className={`text-4xl lg:text-5xl font-bold mb-4 ${MontserratFont.className}`}>
+              Properties
+            </h1>
+            <p className={`text-xl text-white/90 mb-6 ${popinsFont['400'].className} max-w-2xl`}>
+              Manage your property listings ({totalProperties} total)
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button
+              variant="dark" 
+              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/20 border"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              {showFilters ? 'Hide' : 'Show'} Filters
+            </Button>
+            <Button 
+              variant="secondary" 
+              className="bg-white hover:bg-gray-50 text-[var(--primary)] border-0"
+              icon={<PlusIcon className="w-4 h-4" />}
+              onClick={() => router.push('/dashboard/properties/add')}
+            >
+              Add Property
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Filters */}
       {showFilters && (
-        <Card className="p-6">
+        <Card className="p-6 mx-6 mb-8">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Filters</h3>
@@ -480,54 +492,57 @@ const PropertiesPage = () => {
       )}
 
       {/* Properties */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)]"></div>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {properties.map((property) => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
+      <div className='mx-6 mb-8'>
+        {loading || loadingFilters ? (
+          <div className="flex items-center justify-center py-12 mx-6 mb-8 min-h-[300px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)]"></div>
+            <span className="ml-3">Loading properties...</span>
           </div>
-
-          {properties.length === 0 && (
-            <div className="text-center py-12">
-              <HomeIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No properties found</h3>
-              <p className="text-gray-600 mb-4">
-                No properties match your search criteria.
-              </p>
-              <Button onClick={clearFilters}>Clear Filters</Button>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {properties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
             </div>
-          )}
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2">
-              <Button
-                variant="outline"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => prev - 1)}
-              >
-                Previous
-              </Button>
-              
-              <span className="px-4 py-2 text-sm text-gray-700">
-                Page {currentPage} of {totalPages}
-              </span>
-              
-              <Button
-                variant="outline"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => prev + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </>
-      )}
+            {properties.length === 0 && (
+              <div className="text-center py-12">
+                <HomeIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No properties found</h3>
+                <p className="text-gray-600 mb-4">
+                  No properties match your search criteria.
+                </p>
+                <Button onClick={clearFilters}>Clear Filters</Button>
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Button
+                  variant="outline"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => prev - 1)}
+                >
+                  Previous
+                </Button>
+                
+                <span className="px-4 py-2 text-sm text-gray-700">
+                  Page {currentPage} of {totalPages}
+                </span>
+                
+                <Button
+                  variant="outline"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

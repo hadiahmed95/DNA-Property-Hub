@@ -23,6 +23,11 @@ class User extends Authenticatable
         'password',
         'type',
         'status',
+        'avatar',
+        'last_login_at',
+        'login_count',
+        'two_factor_secret',
+        'two_factor_enabled'
     ];
 
     /**
@@ -45,6 +50,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_login_at' => 'datetime',
+            'login_count' => 'integer',
+            'two_factor_enabled' => 'boolean'
         ];
     }
 
@@ -57,4 +65,26 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserContact::class);
     }
+
+    public function settings()
+    {
+        return $this->hasMany(UserSetting::class);
+    }
+
+    public function properties()
+    {
+        return $this->hasMany(Property::class, 'created_by');
+    }
+
+
+    public function getUserSetting($category, $key, $default = null)
+    {
+        $setting = $this->settings()
+            ->where('category', $category)
+            ->where('key', $key)
+            ->first();
+        
+        return $setting ? $setting->value : $default;
+    }
+
 }

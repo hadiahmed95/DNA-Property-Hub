@@ -6,6 +6,7 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\Api\BlogCommentController;
 use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\Admin\BlogController as AdminBlogController;
+use App\Http\Controllers\API\SettingsController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\RoleController;
 use App\Http\Controllers\API\PropertyController;
@@ -119,5 +120,26 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('tags', BlogTagController::class);
             Route::delete('tags/bulk-delete', [BlogTagController::class, 'bulkDelete']);
         });
+
+        Route::prefix('settings')->group(function () {
+            Route::get('/', [SettingsController::class, 'getUserSettings']);
+            Route::post('/update', [SettingsController::class, 'updateSettings']);
+            Route::post('/change-password', [SettingsController::class, 'changePassword']);
+            Route::post('/upload-avatar', [SettingsController::class, 'uploadAvatar']);
+            Route::get('/account-info', [SettingsController::class, 'getAccountInfo']);
+            Route::get('/export-data', [SettingsController::class, 'exportAccountData']);
+            Route::post('/revoke-session/{sessionId}', [SettingsController::class, 'revokeSession']);
+            Route::post('/enable-2fa', [SettingsController::class, 'enableTwoFactorAuth']);
+            Route::post('/confirm-2fa', [SettingsController::class, 'confirmTwoFactorAuth']);
+            Route::post('/disable-2fa', [SettingsController::class, 'disableTwoFactorAuth']);
+            Route::get('/notifications', [SettingsController::class, 'getNotificationPreferences']);
+            Route::post('/test-notification', [SettingsController::class, 'testNotification']);
+            Route::post('/privacy', [SettingsController::class, 'updatePrivacySettings']);
+            Route::post('/delete-account', [SettingsController::class, 'deleteAccount']);
+            Route::get('/api-keys', [SettingsController::class, 'getApiKeys']);
+            Route::post('/api-keys', [SettingsController::class, 'generateApiKey']);
+            Route::delete('/api-keys/{keyId}', [SettingsController::class, 'revokeApiKey']);
+        });
+
     });
 });

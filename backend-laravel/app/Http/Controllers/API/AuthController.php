@@ -44,11 +44,18 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $token = auth()->user()->createToken('auth_token')->accessToken;
+        $user = auth()->user();
+        
+        // Update login tracking
+        $user->last_login_at = now();
+        $user->login_count = ($user->login_count ?? 0) + 1;
+        $user->save();
+
+        $token = $user->createToken('auth_token')->accessToken;
 
         return response()->json([
             'success' => true,
-            'user' => auth()->user(),
+            'user' => $user->load(['profile', 'contact']),
             'access_token' => $token
         ]);
     }
