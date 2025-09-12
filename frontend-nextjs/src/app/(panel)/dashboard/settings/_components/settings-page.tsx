@@ -15,6 +15,7 @@ import {
   XIcon,
   EditIcon
 } from 'lucide-react'
+import { useAuth } from '@/contexts/auth.context'
 
 // Mock services - In real app, these would be actual API calls
 const settingsService = {
@@ -85,19 +86,23 @@ const SettingsPage = () => {
     confirmPassword: ''
   })
 
+  const { user } = useAuth()
+
+  console.log('user', user)
+
   useEffect(() => {
     loadSettings()
   }, [])
 
   const loadSettings = async () => {
-    try {
-      const data = await settingsService.getUserSettings()
-      setSettings(data)
-    } catch (error) {
-      console.error('Failed to load settings:', error)
-    } finally {
-      setLoading(false)
-    }
+    // try {
+    //   const data = await settingsService.getUserSettings()
+    //   setSettings(data)
+    // } catch (error) {
+    //   console.error('Failed to load settings:', error)
+    // } finally {
+    //   setLoading(false)
+    // }
   }
 
   const handleSettingChange = (section: any, key: any, value: any) => {

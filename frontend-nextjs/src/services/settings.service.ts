@@ -1,17 +1,17 @@
 import api from './api'
 
 export interface UserSettings {
-  profile: {
-    name: string
-    email: string
-    avatar: string | null
-    title: string
-    department: string
-    phone: string
-    timezone: string
-    language: string
+  profile?: {
+    name?: string
+    email?: string
+    avatar?: string | null
+    title?: string
+    department?: string
+    phone?: string
+    timezone?: string
+    language?: string
   }
-  notifications: {
+  notifications?: {
     emailNotifications: boolean
     smsNotifications: boolean
     pushNotifications: boolean
@@ -20,13 +20,13 @@ export interface UserSettings {
     propertyAlerts: boolean
     taskReminders: boolean
   }
-  security: {
+  security?: {
     twoFactorAuth: boolean
     loginAlerts: boolean
     passwordChangeRequired: boolean
     sessionTimeout: number
   }
-  display: {
+  display?: {
     theme: 'light' | 'dark' | 'auto'
     language: string
     dateFormat: string
@@ -34,7 +34,7 @@ export interface UserSettings {
     currency: string
     itemsPerPage: number
   }
-  privacy: {
+  privacy?: {
     profileVisibility: 'public' | 'team' | 'private'
     showOnlineStatus: boolean
     allowDirectMessages: boolean

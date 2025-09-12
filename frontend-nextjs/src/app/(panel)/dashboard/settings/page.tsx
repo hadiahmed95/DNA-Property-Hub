@@ -14,29 +14,42 @@ import {
   EyeIcon,
   EyeOffIcon,
   CheckIcon,
-  XIcon,
-  EditIcon,
   AlertTriangleIcon,
   DownloadIcon,
   TrashIcon,
-  KeyIcon
+  LucideProps
 } from 'lucide-react'
 import { MontserratFont, popinsFont } from '../../../fonts'
 import { useSettings } from '@/hooks/useSettings'
-import settingsService from '@/services/settings.service'
+import settingsService, { UserSettings } from '@/services/settings.service'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { ToggleSwitch } from '@/components/settings/ToggleSwitch'
 import Button from '@/components/button'
 import Input from '@/components/form/input'
 import Select from '@/components/form/select'
+import { useAuth } from '@/contexts/auth.context'
+
+type Section = keyof UserSettings
 
 const SettingsPage = () => {
-  const [activeTab, setActiveTab] = useState('profile')
+  const [activeTab, setActiveTab] = useState<Section | 'system'>('profile')
   const [saving, setSaving] = useState(false)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [accountInfo, setAccountInfo] = useState<any>(null)
+  const [formData, setFormData] = useState<UserSettings>({
+    profile: {
+    name: '',
+    email: '',
+    avatar: null,
+    title: '',
+    department: '',
+    phone: '',
+    timezone: '',
+    language: ''
+    }
+  })
   const [passwordData, setPasswordData] = useState({
     current_password: '',
     new_password: '',
@@ -44,12 +57,7 @@ const SettingsPage = () => {
   })
 
   const { settings, loading, error, updateSettings, changePassword, uploadAvatar } = useSettings()
-
-  useEffect(() => {
-    if (activeTab === 'system') {
-      loadAccountInfo()
-    }
-  }, [activeTab])
+  const { user } = useAuth()
 
   const loadAccountInfo = async () => {
     try {
@@ -60,15 +68,17 @@ const SettingsPage = () => {
     }
   }
 
-  const handleSettingChange = (section: string, key: string, value: any) => {
+  const handleSettingChange = (section: keyof UserSettings, key: string, value: any) => {
     // This will be handled by the updateSettings function
     // We'll update local state optimistically
+    setFormData(prev => ({...prev, [section]: prev ? {...prev[section], [key]: value} : {[key]: value}}))
   }
 
   const handleSaveSettings = async (section: string) => {
+    console.log('section', section);
     setSaving(true)
     try {
-      const sectionData = settings?.[section as keyof typeof settings]
+      const sectionData = formData?.[section as keyof typeof formData]
       if (sectionData) {
         await updateSettings(section, sectionData)
         setShowSuccessMessage(true)
@@ -132,7 +142,11 @@ const SettingsPage = () => {
     }
   }
 
-  const tabs = [
+  const tabs: {
+    id: Section | 'system';
+    label: string;
+    icon: React.ForwardRefExoticComponent<Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+  }[] = [
     { id: 'profile', label: 'Profile', icon: UserIcon },
     // { id: 'notifications', label: 'Notifications', icon: BellIcon },
     { id: 'security', label: 'Security', icon: ShieldIcon },
@@ -140,6 +154,22 @@ const SettingsPage = () => {
     // { id: 'privacy', label: 'Privacy', icon: GlobeIcon },
     // { id: 'system', label: 'System', icon: DatabaseIcon }
   ]
+
+  useEffect(() => {
+    if (activeTab === 'system') {
+      loadAccountInfo()
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    setFormData({
+      profile: {
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      }
+    })
+  }, [user])
 
   if (loading) {
     return (
@@ -239,14 +269,14 @@ const SettingsPage = () => {
                 <div className="flex items-center space-x-6">
                   <div className="relative">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
-                      {avatarPreview || settings.profile.avatar ? (
+                      {avatarPreview || settings.profile?.avatar ? (
                         <img 
-                          src={avatarPreview || settings.profile.avatar || ''} 
+                          src={avatarPreview || `${process.env.NEXT_PUBLIC_API_URL}/storage/${settings.profile?.avatar}` || ''} 
                           alt="Avatar" 
                           className="w-24 h-24 rounded-full object-cover" 
                         />
                       ) : (
-                        settings.profile.name?.split(' ').map(n => n[0]).join('') || 'User'
+                        settings.profile?.name?.split(' ').map(n => n[0]).join('') || 'User'
                       )}
                     </div>
                     <label className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
@@ -273,18 +303,18 @@ const SettingsPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
                     label="Full Name"
-                    value={settings.profile.name}
+                    value={formData?.profile?.name}
                     onChange={(e) => handleSettingChange('profile', 'name', e.target.value)}
                   />
                   <Input
                     label="Email"
                     type="email"
-                    value={settings.profile.email}
+                    value={formData?.profile?.email}
                     onChange={(e) => handleSettingChange('profile', 'email', e.target.value)}
                   />
                   <Input
                     label="Job Title"
-                    value={settings.profile.title}
+                    value={formData?.profile?.title}
                     onChange={(e) => handleSettingChange('profile', 'title', e.target.value)}
                   />
                   <Select
@@ -295,13 +325,13 @@ const SettingsPage = () => {
                       { value: 'operations', label: 'Operations' },
                       { value: 'administration', label: 'Administration' }
                     ]}
-                    value={settings.profile.department}
+                    value={formData?.profile?.department}
                     onChange={(e) => handleSettingChange('profile', 'department', e.target.value)}
                   />
                   <Input
                     label="Phone"
                     type="tel"
-                    value={settings.profile.phone}
+                    value={formData?.profile?.phone}
                     onChange={(e) => handleSettingChange('profile', 'phone', e.target.value)}
                   />
                   <Select
@@ -312,7 +342,7 @@ const SettingsPage = () => {
                       { value: 'America/Denver', label: 'Mountain Time' },
                       { value: 'America/Los_Angeles', label: 'Pacific Time' }
                     ]}
-                    value={settings.profile.timezone}
+                    value={formData?.profile?.timezone}
                     onChange={(e) => handleSettingChange('profile', 'timezone', e.target.value)}
                   />
                 </div>
@@ -494,7 +524,7 @@ const SettingsPage = () => {
                       { value: 'dark', label: 'Dark Mode' },
                       { value: 'auto', label: 'Auto (System)' }
                     ]}
-                    value={settings.display.theme}
+                    value={settings.display?.theme}
                     onChange={(e) => handleSettingChange('display', 'theme', e.target.value)}
                   />
                   <Select
@@ -504,7 +534,7 @@ const SettingsPage = () => {
                       { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
                       { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' }
                     ]}
-                    value={settings.display.dateFormat}
+                    value={settings.display?.dateFormat}
                     onChange={(e) => handleSettingChange('display', 'dateFormat', e.target.value)}
                   />
                   <Select
@@ -515,7 +545,7 @@ const SettingsPage = () => {
                       { value: 'GBP', label: 'GBP (£)' },
                       { value: 'CAD', label: 'CAD (C$)' }
                     ]}
-                    value={settings.display.currency}
+                    value={settings.display?.currency}
                     onChange={(e) => handleSettingChange('display', 'currency', e.target.value)}
                   />
                   <Select
@@ -526,7 +556,7 @@ const SettingsPage = () => {
                       { value: '50', label: '50' },
                       { value: '100', label: '100' }
                     ]}
-                    value={settings.display.itemsPerPage.toString()}
+                    value={settings.display?.itemsPerPage.toString()}
                     onChange={(e) => handleSettingChange('display', 'itemsPerPage', parseInt(e.target.value))}
                   />
                 </div>
@@ -559,7 +589,7 @@ const SettingsPage = () => {
                     { value: 'team', label: 'Team Only' },
                     { value: 'private', label: 'Private' }
                   ]}
-                  value={settings.privacy.profileVisibility}
+                  value={settings.privacy?.profileVisibility}
                   onChange={(e) => handleSettingChange('privacy', 'profileVisibility', e.target.value)}
                 />
 

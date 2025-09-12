@@ -19,38 +19,8 @@ import {
   DollarIcon,
 } from '@/components/icons'
 import { MontserratFont, popinsFont } from '../../../fonts'
-
-interface Property {
-  id: number
-  title: string
-  slug?: string
-  location: {
-    address: string
-    city: string
-    state: string
-    full_address: string
-  }
-  price: {
-    value: number
-    formatted: string
-    type: string
-  }
-  bedrooms: number
-  bathrooms: number
-  square_footage: number
-  media: {
-    images: string[]
-    primary_image?: string
-  }
-  status: {
-    is_active: boolean
-    is_featured: boolean
-  }
-  agent: {
-    name: string
-  }
-  filters?: any[]
-}
+import { Property } from '@/types/properties'
+import PropertyCard from './_components/property-card'
 
 interface FilterGroup {
   id: number
@@ -237,125 +207,6 @@ const PropertiesPage = () => {
     { value: 'price_desc', label: 'Price: High to Low' }
   ]
 
-  const handleViewProperty = (property: Property) => {
-    router.push(`/properties/${property.slug || property.id}`)
-  }
-
-  const handleEditProperty = (property: Property) => {
-    router.push(`/dashboard/properties/edit/${property.id}`)
-  }
-
-  const handleDeleteProperty = async (propertyId: number) => {
-    if (!confirm('Are you sure you want to delete this property?')) return
-
-    try {
-      const response = await propertyService.deleteProperty(propertyId)
-      if (response.success) {
-        loadProperties()
-      }
-    } catch (error) {
-      console.error('Delete failed:', error)
-      alert('Failed to delete property')
-    }
-  }
-
-  const formatPrice = (property: Property) => {
-    return property.price?.formatted || `$${property.price?.value?.toLocaleString()}` || 'Price not available'
-  }
-
-  const getPropertyImage = (property: Property) => {
-    return property.media?.primary_image || property.media?.images?.[0] || '/images/banner-1.jpg'
-  }
-
-  // Property Card Component
-  const PropertyCard = ({ property }: { property: Property }) => (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <div className="relative h-48 w-full">
-        <Image
-          src={getPropertyImage(property)}
-          alt={property.title}
-          fill
-          className="object-cover"
-        />
-        <div className="absolute top-3 left-3">
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-            property.price?.type === 'sale' 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-blue-100 text-blue-800'
-          }`}>
-            {property.price?.type === 'sale' ? 'For Sale' : 'For Rent'}
-          </span>
-        </div>
-        {property.status?.is_featured && (
-          <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-              Featured
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="p-4">
-        <div className="mb-3">
-          <h3 className={`font-semibold text-lg text-gray-900 mb-1 ${MontserratFont.className}`}>
-            {property.title}
-          </h3>
-          <p className="text-sm text-gray-600 mb-2">
-            {property.location?.full_address}
-          </p>
-          <p className="text-xl font-bold text-[var(--primary)]">
-            {formatPrice(property)}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-          <div className="flex items-center space-x-4">
-            <span>{property.bedrooms || 0} beds</span>
-            <span>{property.bathrooms || 0} baths</span>
-            <span>{property.square_footage || 0} sqft</span>
-          </div>
-        </div>
-
-        <div className="mb-4 pb-4 border-b border-gray-100">
-          <p className="text-sm text-gray-600">
-            Agent: <span className="font-medium">{property.agent?.name}</span>
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between space-x-2">
-          <div className="flex space-x-2 flex-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleViewProperty(property)}
-              className="flex-1"
-            >
-              <EyeIcon className="w-4 h-4 mr-1" />
-              View
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEditProperty(property)}
-              className="flex-1"
-            >
-              <EditIcon className="w-4 h-4 mr-1" />
-              Edit
-            </Button>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDeleteProperty(property.id)}
-            className="text-red-600 hover:text-red-700"
-          >
-            <TrashIcon className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </Card>
-  )
-
   // if (loadingFilters) {
   //   return (
   //     <div className="flex items-center justify-center py-12">
@@ -502,7 +353,7 @@ const PropertiesPage = () => {
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {properties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
+                <PropertyCard key={property.id} property={property} loadProperties={loadProperties} />
               ))}
             </div>
 

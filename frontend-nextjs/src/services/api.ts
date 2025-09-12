@@ -13,8 +13,8 @@ const api = axios.create({
 
 // Request interceptor
 api.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-        const token = localStorage.getItem('token');
+    async (config: InternalAxiosRequestConfig) => {
+        const token = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/token`).then(response => response.json())
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -32,9 +32,6 @@ api.interceptors.response.use(
         if (error.response) {
             switch (error.response.status) {
                 case 401:
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = '/login';
                     toast.error('Session expired. Please login again.');
                     break;
                 case 403:

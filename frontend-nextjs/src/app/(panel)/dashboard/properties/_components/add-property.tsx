@@ -9,6 +9,7 @@ import Select from '@/components/form/select'
 import propertyService from '@/services/property.service'
 import filterService from '@/services/filter.service'
 import { MontserratFont, popinsFont } from '../../../../fonts'
+import { EditIcon, HomeIcon, House, HouseIcon } from 'lucide-react'
 
 interface PropertyFormData {
   // Basic Information
@@ -593,19 +594,45 @@ const AddPropertyPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className={`text-2xl font-bold text-gray-900 ${MontserratFont.className}`}>
-            Add New Property
-          </h1>
-          <div className="text-sm text-gray-500">
-            Step {currentStep} of {steps.length}
+
+      <div className="relative bg-gradient-to-r from-[var(--primary)] via-amber-500 to-orange-500 rounded-3xl mx-6 mt-6 mb-8 p-8 lg:p-12 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-8 right-8 w-32 h-32 border-2 border-white rounded-full animate-pulse"></div>
+          <div className="absolute bottom-8 left-8 w-24 h-24 border-2 border-white rounded-lg rotate-45"></div>
+        </div>
+        
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between">
+          <div className="text-white mb-6 lg:mb-0">
+            <h1 className={`text-4xl lg:text-5xl font-bold mb-4 ${MontserratFont.className}`}>
+              {'Add New Property'}
+            </h1>
+            <p className={`text-xl text-white/90 mb-6 ${popinsFont['400'].className} max-w-2xl`}>
+              {'Create a new property listing with all the necessary details.'}
+            </p>
+            <div className="flex items-center space-x-6 text-white/90">
+              <div className="flex items-center space-x-2">
+                <HomeIcon className="w-5 h-5" />
+                <span className={`${popinsFont['500'].className}`}>Step {currentStep} of {steps.length}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <EditIcon className="w-5 h-5" />
+                <span className={`${popinsFont['500'].className}`}>{steps[currentStep - 1]?.title}</span>
+              </div>
+            </div>
+          </div>
+          <div className="text-white">
+            <div className="w-32 h-32 bg-white/10 backdrop-blur-sm rounded-3xl p-6 flex items-center justify-center border border-white/20">
+              <div className="text-5xl">
+                <HouseIcon className={'h-20 w-20'} strokeWidth={0.5} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Progress Steps */}
-      <div className="bg-white border-b border-gray-200 px-6 py-6">
+      <div className="px-6 mb-8">
         <Card className="p-6">
           <div className="flex items-center justify-between">
             {steps.map((step, index) => (
@@ -667,10 +694,10 @@ const AddPropertyPage = () => {
               onClick={prevStep}
               disabled={currentStep === 1}
               className="flex items-center"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              icon={<svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-              </svg>
+              </svg>}
+            >
               Previous
             </Button>
 
@@ -687,17 +714,20 @@ const AddPropertyPage = () => {
                   onClick={nextStep}
                   disabled={loading}
                   className="flex items-center"
+                  icon={<svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                  </svg>}
                 >
                   Next
-                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                  </svg>
                 </Button>
               ) : (
                 <Button
                   onClick={handleSubmit}
                   disabled={loading}
                   className="flex items-center"
+                  icon={<svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>}
                 >
                   {loading ? (
                     <>
@@ -705,12 +735,7 @@ const AddPropertyPage = () => {
                       Publishing...
                     </>
                   ) : (
-                    <>
-                      Publish Property
-                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </>
+                    'Publish Property'
                   )}
                 </Button>
               )}

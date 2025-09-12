@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import AuthService from '@/services/auth.service'
 
 interface AuthContextType {
@@ -12,17 +12,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
-
-  useEffect(() => {
-    const user = localStorage.getItem('user')
-    if (user) {
-      setUser(JSON.parse(user))
-      setIsAuthenticated(true)
-    }
-  }, [])
+export const AuthProvider = ({ user, children }: { user: any; children: React.ReactNode }) => {
+  const [_user, setUser] = useState<any>(user)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!user)
 
   const login = async (email: string, password: string, remember?: boolean) => {
     const response = await AuthService.login({ email, password, remember_me: remember })
@@ -37,7 +29,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user: _user, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -8,7 +8,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, icon, variant = 'default', className, ...props }, ref) => {
+  ({ label, error, icon, variant = 'default', className, value, ...props }, ref) => {
     return (
       <div className="space-y-2">
         {label && (
@@ -24,8 +24,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             ref={ref}
+            defaultValue={value ?? ''}
             className={`
-              w-full px-4 py-3 border rounded-xl transition-all duration-200
+              w-full px-4 py-3 border rounded-xl transition-all duration-200 outline-0
               ${icon ? 'pl-10' : 'pl-4'}
               ${error 
                 ? 'border-red-300 focus:ring-2 focus:ring-red-200 focus:border-red-500' 
